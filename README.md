@@ -48,6 +48,23 @@ docker compose up -d --build
 
 Los scripts de `database/` se cargan automáticamente la primera vez que se crea el volumen de Postgres.
 
+## Publicar en GitHub Pages
+
+La página pública se genera en la carpeta `docs/` (HTML, CSS y JS estáticos).
+
+1. En el repositorio: **Settings → Pages**
+2. Source: **GitHub Actions** (recomendado) o **Deploy from a branch** → folder **/docs**
+3. Si usas la carpeta `/docs`, primero corre `npm run build` y sube esos archivos
+
+```bash
+npm install --prefix frontend
+npm run build
+```
+
+Sube el repo incluyendo `docs/`. El menú, pedidos y admin usan el backend (`/api` → `http://localhost:3000`). El menú estático `menu.json` solo sirve como datos de ejemplo para GitHub Pages si no hay servidor.
+
+Para fotos de las pizzas, pon la URL en `frontend/public/menu.json` (`imagen_url`) y vuelve a ejecutar `npm run build`.
+
 ## Arranque local (desarrollo)
 
 **Opción rápida** (backend en Docker + frontend local):
@@ -126,6 +143,7 @@ database/
   03-create-detalle-pedidos.sql
   04-create-administradores.sql
 frontend/src
-  cliente/  → vista pública
+  cliente/  → vista pública (cartas 3D + pedido)
   admin/    → panel protegido
+docs/       → sitio estático para GitHub Pages
 ```

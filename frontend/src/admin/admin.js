@@ -1,4 +1,6 @@
-const API_BASE = "http://localhost:3000/api";
+import { apiUrl } from "../config/api.js";
+
+const API_BASE = apiUrl("/api");
 const TOKEN_KEY = "pizza_admin_token";
 
 let pizzas = [];

@@ -1,4 +1,3 @@
-import "./admin.css";
 import {
   estaAutenticado,
   loginAdmin,
@@ -31,7 +30,6 @@ if (!estaAutenticado()) {
 
         <button type="submit">Iniciar sesión</button>
         <div id="login-resultado"></div>
-        <p class="login-hint">Usuario: admin · Contraseña: admin123</p>
       </form>
     </main>
   `;

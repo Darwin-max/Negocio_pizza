@@ -1,19 +1,32 @@
-const API_PIZZAS = "http://localhost:3000/api/pizzas";
-const API_PEDIDOS = "http://localhost:3000/api/pedidos";
+import { apiUrl } from "../config/api.js";
+
+const API_PIZZAS = apiUrl("/api/pizzas");
+const API_PEDIDOS = apiUrl("/api/pedidos");
 
 const carrito = [];
 let pizzasCatalogo = [];
+
+function escapeHtml(valor) {
+  return String(valor)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
 
 function formatearPrecio(valor) {
   return `$${Number(valor).toLocaleString("es-CO")}`;
 }
 
 function imagenPizza(pizza) {
+  const nombre = escapeHtml(pizza.nombre);
+
   if (!pizza.imagen_url) {
-    return `<div class="pizza-placeholder">Sin imagen</div>`;
+    return `<div class="pizza-placeholder" aria-hidden="true">🍕</div>`;
   }
 
-  return `<img src="${pizza.imagen_url}" alt="${pizza.nombre}" />`;
+  return `<img src="${escapeHtml(pizza.imagen_url)}" alt="${nombre}" loading="lazy" decoding="async" width="480" height="360" />`;
 }
 
 function totalItemsCarrito() {
@@ -63,34 +76,14 @@ function renderCarrito() {
       (item) => `
         <article class="carrito-item">
           <div>
-            <h4>${item.nombre}</h4>
+            <h4>${escapeHtml(item.nombre)}</h4>
             <p>${formatearPrecio(item.precio)} c/u</p>
           </div>
-
           <div class="carrito-item-actions">
-            <button
-              type="button"
-              data-action="menos"
-              data-id="${item.pizza_id}"
-            >
-              −
-            </button>
+            <button type="button" data-action="menos" data-id="${item.pizza_id}" aria-label="Reducir cantidad">−</button>
             <span>${item.cantidad}</span>
-            <button
-              type="button"
-              data-action="mas"
-              data-id="${item.pizza_id}"
-            >
-              +
-            </button>
-            <button
-              type="button"
-              class="quitar"
-              data-action="quitar"
-              data-id="${item.pizza_id}"
-            >
-              Quitar
-            </button>
+            <button type="button" data-action="mas" data-id="${item.pizza_id}" aria-label="Aumentar cantidad">+</button>
+            <button type="button" class="quitar" data-action="quitar" data-id="${item.pizza_id}">Quitar</button>
           </div>
         </article>
       `
@@ -156,35 +149,71 @@ function quitarDelCarrito(pizzaId) {
 }
 
 function abrirCarrito() {
-  document.querySelector("#carrito-panel")?.classList.add("abierto");
-  document.querySelector("#carrito-fondo")?.classList.add("visible");
+  const panel = document.querySelector("#carrito-panel");
+  const fondo = document.querySelector("#carrito-fondo");
+
+  panel?.classList.add("abierto");
+  fondo?.classList.add("visible");
+  panel?.setAttribute("aria-hidden", "false");
+  document.body.classList.add("carrito-abierto");
 }
 
 function cerrarCarrito() {
-  document.querySelector("#carrito-panel")?.classList.remove("abierto");
-  document.querySelector("#carrito-fondo")?.classList.remove("visible");
+  const panel = document.querySelector("#carrito-panel");
+  const fondo = document.querySelector("#carrito-fondo");
+
+  panel?.classList.remove("abierto");
+  fondo?.classList.remove("visible");
+  panel?.setAttribute("aria-hidden", "true");
+  document.body.classList.remove("carrito-abierto");
+}
+
+function mostrarPedidoExito(pedido) {
+  const resultado = document.querySelector("#pedido-resultado");
+  const vacio = document.querySelector("#carrito-vacio");
+
+  if (vacio) vacio.hidden = true;
+
+  if (resultado) {
+    resultado.innerHTML = `
+      <div class="pedido-exito" role="status">
+        <h3>Pedido confirmado</h3>
+        <p>Pedido #${escapeHtml(pedido.id)}</p>
+        <p>Total: ${formatearPrecio(pedido.total)}</p>
+        <p>
+          Código de confirmación:
+          <strong>${escapeHtml(pedido.codigo_confirmacion)}</strong>
+        </p>
+        <p class="pedido-ayuda">
+          Guarda este código para retirar tu pedido en el local.
+        </p>
+      </div>
+    `;
+  }
 }
 
 async function crearYConfirmarPedido() {
   const boton = document.querySelector("#btn-confirmar-pedido");
-  const resultado = document.querySelector("#pedido-resultado");
 
   if (carrito.length === 0) return;
 
   try {
-    if (boton) boton.disabled = true;
+    if (boton) {
+      boton.disabled = true;
+      boton.textContent = "Procesando...";
+    }
+
+    const cuerpo = {
+      pizzas: carrito.map((item) => ({
+        pizza_id: item.pizza_id,
+        cantidad: item.cantidad,
+      })),
+    };
 
     const crearResponse = await fetch(API_PEDIDOS, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        pizzas: carrito.map((item) => ({
-          pizza_id: item.pizza_id,
-          cantidad: item.cantidad,
-        })),
-      }),
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(cuerpo),
     });
 
     const crearData = await crearResponse.json();
@@ -194,14 +223,9 @@ async function crearYConfirmarPedido() {
     }
 
     const pedidoId = crearData.pedido.id;
-
-    const pagoResponse = await fetch(
-      `${API_PEDIDOS}/${pedidoId}/confirmar-pago`,
-      {
-        method: "POST",
-      }
-    );
-
+    const pagoResponse = await fetch(`${API_PEDIDOS}/${pedidoId}/confirmar-pago`, {
+      method: "POST",
+    });
     const pagoData = await pagoResponse.json();
 
     if (!pagoResponse.ok) {
@@ -210,148 +234,207 @@ async function crearYConfirmarPedido() {
 
     carrito.splice(0, carrito.length);
     renderCarrito();
-
-    const vacio = document.querySelector("#carrito-vacio");
-    if (vacio) vacio.hidden = true;
-
-    if (resultado) {
-      resultado.innerHTML = `
-        <div class="pedido-exito">
-          <h3>Pedido confirmado</h3>
-          <p>Pedido #${pagoData.pedido.id}</p>
-          <p>Total: ${formatearPrecio(pagoData.pedido.total)}</p>
-          <p>
-            Código de confirmación:
-            <strong>${pagoData.pedido.codigo_confirmacion}</strong>
-          </p>
-          <p class="pedido-ayuda">
-            Guarda este código para retirar tu pedido.
-          </p>
-        </div>
-      `;
-    }
-
+    mostrarPedidoExito(pagoData.pedido);
     await cargarPizzasCliente();
   } catch (error) {
     console.error(error);
-    alert(error.message);
+    alert(error.message || "No se pudo confirmar el pedido. ¿Está el backend encendido?");
   } finally {
-    if (boton) boton.disabled = false;
+    if (boton) {
+      boton.disabled = false;
+      boton.textContent = "Confirmar y pagar";
+    }
   }
 }
 
+function voltearCarta(card, forzar) {
+  const inner = card.querySelector(".flip-card-inner");
+  if (!inner) return;
+
+  const abrir = forzar ?? !card.classList.contains("is-flipped");
+
+  document.querySelectorAll(".flip-card.is-flipped").forEach((otra) => {
+    if (otra !== card) {
+      otra.classList.remove("is-flipped");
+      otra.querySelector(".flip-card-inner")?.setAttribute("aria-expanded", "false");
+    }
+  });
+
+  card.classList.toggle("is-flipped", abrir);
+  inner.setAttribute("aria-expanded", abrir ? "true" : "false");
+}
+
 export function inicializarCarrito() {
+  document.querySelector("#btn-abrir-carrito")?.addEventListener("click", abrirCarrito);
   document
-    .querySelector("#btn-abrir-carrito")
+    .querySelector("#btn-abrir-carrito-contacto")
     ?.addEventListener("click", abrirCarrito);
-
-  document
-    .querySelector("#btn-cerrar-carrito")
-    ?.addEventListener("click", cerrarCarrito);
-
-  document
-    .querySelector("#carrito-fondo")
-    ?.addEventListener("click", cerrarCarrito);
-
+  document.querySelector("#btn-cerrar-carrito")?.addEventListener("click", cerrarCarrito);
+  document.querySelector("#carrito-fondo")?.addEventListener("click", cerrarCarrito);
   document
     .querySelector("#btn-confirmar-pedido")
     ?.addEventListener("click", crearYConfirmarPedido);
 
-  document
-    .querySelector("#carrito-lista")
-    ?.addEventListener("click", (event) => {
-      const boton = event.target.closest("button[data-action]");
+  document.querySelector("#carrito-lista")?.addEventListener("click", (event) => {
+    const boton = event.target.closest("button[data-action]");
+    if (!boton) return;
 
-      if (!boton) return;
+    const id = Number(boton.dataset.id);
+    const action = boton.dataset.action;
 
-      const id = Number(boton.dataset.id);
-      const action = boton.dataset.action;
+    if (action === "mas") cambiarCantidad(id, 1);
+    if (action === "menos") cambiarCantidad(id, -1);
+    if (action === "quitar") quitarDelCarrito(id);
+  });
 
-      if (action === "mas") cambiarCantidad(id, 1);
-      if (action === "menos") cambiarCantidad(id, -1);
-      if (action === "quitar") quitarDelCarrito(id);
-    });
+  document.querySelector("#pizzas-cliente")?.addEventListener("click", (event) => {
+    const add = event.target.closest("button[data-add]");
+    if (add) {
+      event.stopPropagation();
+      agregarAlCarrito(Number(add.dataset.add));
+      return;
+    }
 
-  document
-    .querySelector("#pizzas-cliente")
-    ?.addEventListener("click", (event) => {
-      const boton = event.target.closest("button[data-add]");
+    const toggle = event.target.closest("[data-flip]");
+    const card = event.target.closest(".flip-card");
+    if (toggle && card) {
+      voltearCarta(card);
+    }
+  });
 
-      if (!boton) return;
+  document.querySelector("#pizzas-cliente")?.addEventListener("keydown", (event) => {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    const inner = event.target.closest(".flip-card-inner");
+    const card = event.target.closest(".flip-card");
+    if (!inner || !card) return;
+    event.preventDefault();
+    voltearCarta(card);
+  });
 
-      agregarAlCarrito(Number(boton.dataset.add));
-    });
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") cerrarCarrito();
+  });
 
   renderCarrito();
 }
 
+export function inicializarNavegacion() {
+  const toggle = document.querySelector("#nav-toggle");
+  const nav = document.querySelector("#site-nav");
+  const header = document.querySelector(".site-header");
+
+  toggle?.addEventListener("click", () => {
+    const abierto = nav?.classList.toggle("abierto");
+    toggle.setAttribute("aria-expanded", abierto ? "true" : "false");
+  });
+
+  nav?.querySelectorAll("a").forEach((link) => {
+    link.addEventListener("click", () => {
+      nav.classList.remove("abierto");
+      toggle?.setAttribute("aria-expanded", "false");
+    });
+  });
+
+  window.addEventListener(
+    "scroll",
+    () => {
+      header?.classList.toggle("scrolled", window.scrollY > 8);
+    },
+    { passive: true }
+  );
+}
+
+async function obtenerPizzas() {
+  const response = await fetch(API_PIZZAS);
+
+  if (!response.ok) {
+    throw new Error("No se pudieron cargar las pizzas desde el servidor");
+  }
+
+  const data = await response.json();
+
+  if (!Array.isArray(data)) {
+    throw new Error("Respuesta inválida del servidor");
+  }
+
+  return data;
+}
+
 export async function cargarPizzasCliente() {
   const contenedor = document.querySelector("#pizzas-cliente");
+  if (!contenedor) return;
 
   try {
-    const response = await fetch(API_PIZZAS);
-
-    if (!response.ok) {
-      throw new Error("No se pudieron cargar las pizzas");
-    }
-
-    pizzasCatalogo = await response.json();
+    pizzasCatalogo = await obtenerPizzas();
 
     if (pizzasCatalogo.length === 0) {
-      contenedor.innerHTML = `
-        <p>No hay pizzas disponibles.</p>
-      `;
+      contenedor.innerHTML = `<div class="menu-empty"><p>No hay pizzas disponibles.</p></div>`;
       return;
     }
 
     contenedor.innerHTML = pizzasCatalogo
-      .map(
-        (pizza) => `
-          <article class="pizza-card">
+      .map((pizza) => {
+        const nombre = escapeHtml(pizza.nombre);
+        const descripcion = escapeHtml(pizza.descripcion);
+        const disponible =
+          pizza.disponible === true ||
+          pizza.disponible === "t" ||
+          Number(pizza.stock) > 0;
 
-            <div class="pizza-image">
-              ${imagenPizza(pizza)}
+        return `
+          <article class="flip-card">
+            <div class="flip-card-scene">
+              <div
+                class="flip-card-inner"
+                data-flip
+                role="button"
+                tabindex="0"
+                aria-expanded="false"
+                aria-label="${nombre}: tocar para ver detalles"
+              >
+                <div class="flip-card-face flip-card-front">
+                  <div class="pizza-image">
+                    ${imagenPizza(pizza)}
+                    <span class="pizza-badge ${disponible ? "disponible" : "agotada"}">
+                      ${disponible ? "Disponible" : "Agotada"}
+                    </span>
+                  </div>
+                  <div class="pizza-info">
+                    <h3>${nombre}</h3>
+                    <strong>${formatearPrecio(pizza.precio)}</strong>
+                    <span class="flip-hint">Toca para voltear</span>
+                  </div>
+                </div>
+                <div class="flip-card-face flip-card-back">
+                  <div class="pizza-info">
+                    <h3>${nombre}</h3>
+                    <p>${descripcion}</p>
+                    <strong>${formatearPrecio(pizza.precio)}</strong>
+                    ${
+                      disponible
+                        ? `<button type="button" class="btn-add" data-add="${pizza.id}">Agregar al pedido</button>`
+                        : `<span class="btn-add btn-add-disabled">Agotada</span>`
+                    }
+                    <span class="flip-hint">Toca para volver</span>
+                  </div>
+                </div>
+              </div>
             </div>
-
-            <div class="pizza-info">
-              <h3>${pizza.nombre}</h3>
-
-              <p>${pizza.descripcion}</p>
-
-              <strong>
-                ${formatearPrecio(pizza.precio)}
-              </strong>
-
-              <span class="${
-                pizza.disponible ? "disponible" : "agotada"
-              }">
-                ${pizza.disponible ? "Disponible" : "Agotada"}
-              </span>
-
-              ${
-                pizza.disponible
-                  ? `
-                    <button type="button" data-add="${pizza.id}">
-                      Agregar al pedido
-                    </button>
-                  `
-                  : ""
-              }
-
-            </div>
-
           </article>
-        `
-      )
+        `;
+      })
       .join("");
   } catch (error) {
     console.error(error);
-
     contenedor.innerHTML = `
-      <p>
-        No pudimos cargar las pizzas.
-        Verifica que el backend esté funcionando.
-      </p>
+      <div class="menu-error" role="alert">
+        <p>No pudimos conectar con el servidor.</p>
+        <p class="menu-error-hint">Arranca el backend: docker compose up -d</p>
+        <button type="button" class="btn btn-secondary" id="btn-reintentar-menu">Reintentar</button>
+      </div>
     `;
+    contenedor.querySelector("#btn-reintentar-menu")?.addEventListener("click", () => {
+      location.reload();
+    });
   }
 }

@@ -1,0 +1,50 @@
+[
+  {
+    "id": 1,
+    "nombre": "Margarita",
+    "descripcion": "Salsa de tomate, mozzarella fresca, albahaca y aceite de oliva.",
+    "precio": "28000.00",
+    "imagen_url": "",
+    "disponible": true
+  },
+  {
+    "id": 2,
+    "nombre": "Pepperoni",
+    "descripcion": "Mozzarella, salsa de tomate y pepperoni crujiente.",
+    "precio": "32000.00",
+    "imagen_url": "",
+    "disponible": true
+  },
+  {
+    "id": 3,
+    "nombre": "Hawaiana",
+    "descripcion": "Jamón, piña, mozzarella y salsa de tomate.",
+    "precio": "31000.00",
+    "imagen_url": "",
+    "disponible": true
+  },
+  {
+    "id": 4,
+    "nombre": "Cuatro quesos",
+    "descripcion": "Mozzarella, parmesano, gorgonzola y queso crema.",
+    "precio": "34000.00",
+    "imagen_url": "",
+    "disponible": true
+  },
+  {
+    "id": 5,
+    "nombre": "BBQ Pollo",
+    "descripcion": "Pollo, salsa BBQ, cebolla morada y mozzarella.",
+    "precio": "36000.00",
+    "imagen_url": "",
+    "disponible": true
+  },
+  {
+    "id": 6,
+    "nombre": "Vegetariana",
+    "descripcion": "Pimentón, champiñones, aceitunas, cebolla y mozzarella.",
+    "precio": "30000.00",
+    "imagen_url": "",
+    "disponible": false
+  }
+]
