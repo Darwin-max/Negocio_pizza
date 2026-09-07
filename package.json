@@ -5,6 +5,7 @@
     "dev": "npm run dev --prefix frontend",
     "dev:frontend": "npm run dev --prefix frontend",
     "dev:backend": "npm run dev --prefix backend",
+    "build": "npm run build --prefix frontend",
     "docker:up": "docker compose up -d --build",
     "docker:postgres": "docker compose up -d postgres"
   }
