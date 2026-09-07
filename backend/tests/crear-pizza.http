@@ -1,0 +1,39 @@
+### Crear pizza
+POST http://localhost:3000/api/pizzas
+Content-Type: application/json
+
+{
+  "nombre": "Pepperoni",
+  "descripcion": "Pizza con salsa de tomate, queso mozzarella y pepperoni.",
+  "precio": 25000,
+  "stock": 10,
+  "imagen_url": "https://images.unsplash.com/photo-1628840042765-356cda07504e"
+}
+
+###
+
+### Actualizar pizza
+PUT http://localhost:3000/api/pizzas/1
+Content-Type: application/json
+
+{
+  "nombre": "Pepperoni Especial",
+  "descripcion": "Pizza con salsa de tomate, queso mozzarella y pepperoni.",
+  "precio": 28000,
+  "stock": 15,
+  "imagen_url": "https://images.unsplash.com/photo-1628840042765-356cda07504e",
+  "activo": true
+}
+
+###
+
+### Desactivar pizza
+DELETE http://localhost:3000/api/pizzas/
+
+
+### Pizzas disponibles para cliente
+GET http://localhost:3000/api/pizzas
+
+
+### Activar pizza
+PATCH http://localhost:3000/api/pizzas/1/activar

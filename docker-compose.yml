@@ -1,0 +1,38 @@
+services:
+  backend:
+    build:
+      context: ./backend
+    image: inventario-backend:1.0
+    container_name: inventario-backend
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env
+    environment:
+      DB_HOST: postgres
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: inventario-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: inventario
+      POSTGRES_USER: inventario_user
+      POSTGRES_PASSWORD: inventario_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U inventario_user -d inventario"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  postgres_data:

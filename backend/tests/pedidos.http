@@ -1,0 +1,25 @@
+### Crear pedido
+POST http://localhost:3000/api/pedidos
+Content-Type: application/json
+
+{
+  "pizzas": [
+    {
+      "pizza_id": 1,
+      "cantidad": 2
+    }
+  ]
+}
+
+###
+
+### Confirmar pago del pedido 1
+POST http://localhost:3000/api/pedidos/1/confirmar-pago
+
+### Finalizar pedido
+POST http://localhost:3000/api/pedidos/1/finalizar
+Content-Type: application/json
+
+{
+  "codigo": "PZ-3ZANQA"
+}

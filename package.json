@@ -1,0 +1,11 @@
+{
+  "name": "pizza-negocio",
+  "private": true,
+  "scripts": {
+    "dev": "npm run dev --prefix frontend",
+    "dev:frontend": "npm run dev --prefix frontend",
+    "dev:backend": "npm run dev --prefix backend",
+    "docker:up": "docker compose up -d --build",
+    "docker:postgres": "docker compose up -d postgres"
+  }
+}
