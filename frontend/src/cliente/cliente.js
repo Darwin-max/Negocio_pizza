@@ -239,25 +239,36 @@ async function crearYConfirmarPedido() {
   } catch (error) {
     console.error(error);
 
-    // En GitHub Pages (sin backend) generamos un código de demo para mostrar el flujo
-    if (!["localhost", "127.0.0.1"].includes(location.hostname)) {
+    const esLocal = ["localhost", "127.0.0.1"].includes(location.hostname);
+    if (!esLocal) {
+      // Sin backend (GitHub Pages u otro host estático) → modo demo con número único
       const totalDemo = carrito.reduce((s, i) => s + Number(i.precio) * i.cantidad, 0);
       const codigoDemo = `PZ-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
-      const pedidoDemo = { id: "demo", total: totalDemo, codigo_confirmacion: codigoDemo };
+      const idDemo = Date.now().toString().slice(-6);
+      const pedidoDemo = { id: idDemo, total: totalDemo, codigo_confirmacion: codigoDemo };
 
       carrito.splice(0, carrito.length);
       renderCarrito();
       mostrarPedidoExito(pedidoDemo);
 
-      // Aviso debajo del resultado para que quede claro que es demo
       const nota = document.createElement("p");
       nota.className = "pedido-ayuda";
-      nota.style.color = "var(--color-muted, #888)";
+      nota.style.cssText = "color:var(--color-muted,#888);font-size:.85em;margin-top:.5rem;";
       nota.textContent =
-        "Vista de muestra (GitHub Pages): el backend no está conectado. Este código es de demostración.";
+        "Vista de demostración: el servidor no está activo. Presenta este código en el local para confirmar.";
       document.querySelector("#pedido-resultado .pedido-exito")?.appendChild(nota);
     } else {
-      alert(error.message || "No se pudo confirmar el pedido. ¿Está el backend encendido?");
+      // En local mostrar el error en pantalla (no alert) para poder diagnosticarlo
+      const resultado = document.querySelector("#pedido-resultado");
+      if (resultado) {
+        resultado.innerHTML = `
+          <div class="pedido-error" role="alert">
+            <p><strong>No se pudo procesar el pedido</strong></p>
+            <p>${escapeHtml(error.message || "Error desconocido")}</p>
+            <p class="pedido-ayuda">Asegúrate de que el backend esté corriendo: <code>docker compose up -d</code></p>
+          </div>
+        `;
+      }
     }
   } finally {
     if (boton) {
