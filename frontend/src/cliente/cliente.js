@@ -238,7 +238,27 @@ async function crearYConfirmarPedido() {
     await cargarPizzasCliente();
   } catch (error) {
     console.error(error);
-    alert(error.message || "No se pudo confirmar el pedido. ¿Está el backend encendido?");
+
+    // En GitHub Pages (sin backend) generamos un código de demo para mostrar el flujo
+    if (!["localhost", "127.0.0.1"].includes(location.hostname)) {
+      const totalDemo = carrito.reduce((s, i) => s + Number(i.precio) * i.cantidad, 0);
+      const codigoDemo = `PZ-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
+      const pedidoDemo = { id: "demo", total: totalDemo, codigo_confirmacion: codigoDemo };
+
+      carrito.splice(0, carrito.length);
+      renderCarrito();
+      mostrarPedidoExito(pedidoDemo);
+
+      // Aviso debajo del resultado para que quede claro que es demo
+      const nota = document.createElement("p");
+      nota.className = "pedido-ayuda";
+      nota.style.color = "var(--color-muted, #888)";
+      nota.textContent =
+        "Vista de muestra (GitHub Pages): el backend no está conectado. Este código es de demostración.";
+      document.querySelector("#pedido-resultado .pedido-exito")?.appendChild(nota);
+    } else {
+      alert(error.message || "No se pudo confirmar el pedido. ¿Está el backend encendido?");
+    }
   } finally {
     if (boton) {
       boton.disabled = false;
@@ -248,20 +268,17 @@ async function crearYConfirmarPedido() {
 }
 
 function voltearCarta(card, forzar) {
-  const inner = card.querySelector(".flip-card-inner");
-  if (!inner) return;
-
   const abrir = forzar ?? !card.classList.contains("is-flipped");
 
-  document.querySelectorAll(".flip-card.is-flipped").forEach((otra) => {
+  document.querySelectorAll(".pizza-card-3d.is-flipped").forEach((otra) => {
     if (otra !== card) {
       otra.classList.remove("is-flipped");
-      otra.querySelector(".flip-card-inner")?.setAttribute("aria-expanded", "false");
+      otra.setAttribute("aria-expanded", "false");
     }
   });
 
   card.classList.toggle("is-flipped", abrir);
-  inner.setAttribute("aria-expanded", abrir ? "true" : "false");
+  card.setAttribute("aria-expanded", abrir ? "true" : "false");
 }
 
 export function inicializarCarrito() {
@@ -295,18 +312,16 @@ export function inicializarCarrito() {
       return;
     }
 
-    const toggle = event.target.closest("[data-flip]");
-    const card = event.target.closest(".flip-card");
-    if (toggle && card) {
+    const card = event.target.closest(".pizza-card-3d");
+    if (card) {
       voltearCarta(card);
     }
   });
 
   document.querySelector("#pizzas-cliente")?.addEventListener("keydown", (event) => {
     if (event.key !== "Enter" && event.key !== " ") return;
-    const inner = event.target.closest(".flip-card-inner");
-    const card = event.target.closest(".flip-card");
-    if (!inner || !card) return;
+    const card = event.target.closest(".pizza-card-3d");
+    if (!card) return;
     event.preventDefault();
     voltearCarta(card);
   });
@@ -345,19 +360,19 @@ export function inicializarNavegacion() {
 }
 
 async function obtenerPizzas() {
-  const response = await fetch(API_PIZZAS);
-
-  if (!response.ok) {
-    throw new Error("No se pudieron cargar las pizzas desde el servidor");
+  // Intenta el backend; si no está disponible (GitHub Pages, sin servidor) carga el JSON estático
+  try {
+    const response = await fetch(API_PIZZAS);
+    if (!response.ok) throw new Error("API no disponible");
+    const data = await response.json();
+    if (!Array.isArray(data)) throw new Error("Respuesta inválida del servidor");
+    return data;
+  } catch {
+    // Fallback a menú estático (modo demo / GitHub Pages)
+    const fallback = await fetch("./menu.json");
+    if (!fallback.ok) throw new Error("No se pudo cargar el menú");
+    return fallback.json();
   }
-
-  const data = await response.json();
-
-  if (!Array.isArray(data)) {
-    throw new Error("Respuesta inválida del servidor");
-  }
-
-  return data;
 }
 
 export async function cargarPizzasCliente() {
@@ -382,42 +397,45 @@ export async function cargarPizzasCliente() {
           Number(pizza.stock) > 0;
 
         return `
-          <article class="flip-card">
-            <div class="flip-card-scene">
-              <div
-                class="flip-card-inner"
-                data-flip
-                role="button"
-                tabindex="0"
-                aria-expanded="false"
-                aria-label="${nombre}: tocar para ver detalles"
-              >
-                <div class="flip-card-face flip-card-front">
-                  <div class="pizza-image">
-                    ${imagenPizza(pizza)}
-                    <span class="pizza-badge ${disponible ? "disponible" : "agotada"}">
-                      ${disponible ? "Disponible" : "Agotada"}
-                    </span>
-                  </div>
-                  <div class="pizza-info">
-                    <h3>${nombre}</h3>
-                    <strong>${formatearPrecio(pizza.precio)}</strong>
-                    <span class="flip-hint">Toca para voltear</span>
-                  </div>
-                </div>
-                <div class="flip-card-face flip-card-back">
-                  <div class="pizza-info">
-                    <h3>${nombre}</h3>
-                    <p>${descripcion}</p>
-                    <strong>${formatearPrecio(pizza.precio)}</strong>
-                    ${
-                      disponible
-                        ? `<button type="button" class="btn-add" data-add="${pizza.id}">Agregar al pedido</button>`
-                        : `<span class="btn-add btn-add-disabled">Agotada</span>`
-                    }
-                    <span class="flip-hint">Toca para volver</span>
-                  </div>
-                </div>
+          <article class="pizza-card-3d ${disponible ? "" : "pizza-card-agotada"}"
+            data-flip
+            role="button"
+            tabindex="0"
+            aria-expanded="false"
+            aria-label="${nombre}: tocar para ver detalles"
+          >
+            <div class="pizza-face pizza-face-1">
+              <div class="pizza-face-top">
+                <span class="pizza-badge-3d ${disponible ? "disponible" : "agotada"} hide">
+                  ${disponible ? "✓ Disponible" : "✗ Agotada"}
+                </span>
+                <h3 class="pizza-nombre-3d hide">${nombre}</h3>
+                <p class="pizza-desc-3d hide">${descripcion}</p>
+              </div>
+              <div class="pizza-face-bottom">
+                <strong class="pizza-precio-3d hide">${formatearPrecio(pizza.precio)}</strong>
+                <span class="pizza-hint hide">👆 Ver detalles</span>
+              </div>
+            </div>
+
+            <div class="pizza-face pizza-face-2">
+              <div class="pizza-face-top">
+                <h3 class="pizza-nombre-back hide">${nombre}</h3>
+                <p class="pizza-desc-back hide">${descripcion}</p>
+              </div>
+              <div class="pizza-face-bottom">
+                <strong class="pizza-precio-back hide">${formatearPrecio(pizza.precio)}</strong>
+                ${
+                  disponible
+                    ? `<button type="button" class="btn-add-3d hide" data-add="${pizza.id}">🛒 Agregar al pedido</button>`
+                    : `<span class="btn-add-3d btn-add-3d-disabled hide">Sin stock</span>`
+                }
+              </div>
+            </div>
+
+            <div class="pizza-img-wrapper">
+              <div class="pizza-img-float">
+                ${imagenPizza(pizza)}
               </div>
             </div>
           </article>

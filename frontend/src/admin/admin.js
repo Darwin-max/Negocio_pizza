@@ -301,7 +301,12 @@ export async function finalizarPedido(event) {
   const pedidoId = document.querySelector("#pedido-id").value.trim();
   const codigo = document.querySelector("#pedido-codigo").value.trim();
   const resultado = document.querySelector("#finalizar-resultado");
-  const boton = event.target.querySelector('button[type="submit"]');
+  const boton = event.currentTarget.querySelector('button[type="submit"]');
+
+  if (!pedidoId || !codigo) {
+    resultado.innerHTML = `<p class="error">El ID del pedido y el código son obligatorios.</p>`;
+    return;
+  }
 
   try {
     if (boton) boton.disabled = true;

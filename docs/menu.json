@@ -4,7 +4,7 @@
     "nombre": "Margarita",
     "descripcion": "Salsa de tomate, mozzarella fresca, albahaca y aceite de oliva.",
     "precio": "28000.00",
-    "imagen_url": "",
+    "imagen_url": "https://cdn.phototourl.com/free/2026-09-07-b35015f9-5802-479a-b957-88c23d3bc54c.jpg",
     "disponible": true
   },
   {
@@ -12,7 +12,7 @@
     "nombre": "Pepperoni",
     "descripcion": "Mozzarella, salsa de tomate y pepperoni crujiente.",
     "precio": "32000.00",
-    "imagen_url": "",
+    "imagen_url": "https://cdn.phototourl.com/free/2026-09-07-ff80d755-69e0-41a5-a05d-957b953a4062.jpg",
     "disponible": true
   },
   {
@@ -20,7 +20,7 @@
     "nombre": "Hawaiana",
     "descripcion": "Jamón, piña, mozzarella y salsa de tomate.",
     "precio": "31000.00",
-    "imagen_url": "",
+    "imagen_url": "https://cdn.phototourl.com/free/2026-09-07-54037523-01a1-4be0-9fdc-d88c19de9634.jpg",
     "disponible": true
   },
   {
@@ -28,7 +28,7 @@
     "nombre": "Cuatro quesos",
     "descripcion": "Mozzarella, parmesano, gorgonzola y queso crema.",
     "precio": "34000.00",
-    "imagen_url": "",
+    "imagen_url": "https://cdn.phototourl.com/free/2026-09-07-ed05b62a-9488-42e5-9e1e-bde937888be4.jpg",
     "disponible": true
   },
   {
@@ -36,15 +36,7 @@
     "nombre": "BBQ Pollo",
     "descripcion": "Pollo, salsa BBQ, cebolla morada y mozzarella.",
     "precio": "36000.00",
-    "imagen_url": "",
+    "imagen_url": "https://cdn.phototourl.com/free/2026-09-07-ab0433f0-a92a-4bd1-8a95-be575dfdb712.jpg",
     "disponible": true
-  },
-  {
-    "id": 6,
-    "nombre": "Vegetariana",
-    "descripcion": "Pimentón, champiñones, aceitunas, cebolla y mozzarella.",
-    "precio": "30000.00",
-    "imagen_url": "",
-    "disponible": false
   }
 ]
