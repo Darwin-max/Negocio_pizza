@@ -520,6 +520,68 @@
   min-height: 42px;
 }
 
+.pizza-face-top,
+.pizza-face-bottom {
+  width: 58%;
+}
+
+.pizza-img-wrapper {
+  inset: 0 0 0 auto;
+  z-index: 10;
+  width: 43%;
+  height: 100%;
+  overflow: hidden;
+  border-radius: 0 20px 20px 0;
+  transform-style: preserve-3d;
+}
+
+.pizza-img-float {
+  top: 50%;
+  left: 50%;
+  width: 94%;
+  transform: translate(-50%, -50%) translateZ(24px);
+  animation: pizzaSideFloat 3.2s ease-in-out infinite alternate;
+  transition: transform 0.65s ease, opacity 0.4s ease;
+}
+
+.pizza-img-float img,
+.pizza-img-float .pizza-placeholder {
+  aspect-ratio: 1;
+  border-radius: 18px;
+  object-fit: cover;
+  transform: none;
+}
+
+.pizza-card-3d:hover .pizza-img-float,
+.pizza-card-3d.is-flipped .pizza-img-float {
+  top: 50%;
+  left: 50%;
+  width: 94%;
+  transform: translate(-50%, -50%) translateZ(24px);
+}
+
+.pizza-card-3d:hover .pizza-img-float img,
+.pizza-card-3d:hover .pizza-img-float .pizza-placeholder,
+.pizza-card-3d.is-flipped .pizza-img-float img,
+.pizza-card-3d.is-flipped .pizza-img-float .pizza-placeholder {
+  transform: none;
+}
+
+.pizza-card-3d:hover .pizza-img-wrapper,
+.pizza-card-3d.is-flipped .pizza-img-wrapper {
+  opacity: 0;
+  visibility: hidden;
+}
+
+@keyframes pizzaSideFloat {
+  from {
+    transform: translate(-50%, calc(-50% - 3px)) translateZ(24px);
+  }
+  to {
+    transform: translate(-50%, calc(-50% + 3px)) translateZ(24px);
+  }
+}
+
 .steps-section {
   border-top: 1px solid rgba(255, 255, 255, 0.08);
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
