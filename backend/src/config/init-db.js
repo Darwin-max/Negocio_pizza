@@ -1,4 +1,5 @@
 const pool = require("./database");
+const bcrypt = require("bcryptjs");
 
 /**
  * Crea todas las tablas si no existen y siembra el admin por defecto.
@@ -60,11 +61,30 @@ async function initDb() {
     `);
 
     // Admin por defecto: usuario=admin, password=admin123
-    await client.query(`
-      INSERT INTO administradores (usuario, password_hash)
-      VALUES ('admin', '$2b$10$WJ6rc8cjr4ht199ZB/HWKew9DJJBn4dm/nbmYsA3DrLR3govZIURe')
-      ON CONFLICT (usuario) DO NOTHING;
-    `);
+    const existingAdmin = await client.query(
+      "SELECT 1 FROM administradores WHERE usuario = $1",
+      ["admin"]
+    );
+
+    if (existingAdmin.rowCount === 0) {
+      const adminPassword =
+        process.env.ADMIN_PASSWORD ||
+        (process.env.NODE_ENV === "production" ? null : "admin123");
+
+      if (!adminPassword) {
+        throw new Error("Define ADMIN_PASSWORD para crear el administrador inicial");
+      }
+
+      const passwordHash = await bcrypt.hash(adminPassword, 10);
+      await client.query(
+        `
+        INSERT INTO administradores (usuario, password_hash)
+        VALUES ('admin', $1)
+        ON CONFLICT (usuario) DO NOTHING;
+      `,
+        [passwordHash]
+      );
+    }
 
     // Pizzas de ejemplo si la tabla está vacía
     await client.query(`

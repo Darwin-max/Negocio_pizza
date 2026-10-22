@@ -40,6 +40,20 @@ JWT_EXPIRES_IN=8h
 
 Si corres el backend fuera de Docker, usa `DB_HOST=localhost`.
 
+## Despliegue en Render
+
+El archivo `render.yaml` configura el API de Node, el sitio estático y PostgreSQL como un Blueprint.
+
+1. Sube el repositorio a GitHub y en Render crea un **New + → Blueprint** conectado a ese repositorio.
+2. Render detectará `render.yaml`. Al crear los servicios, completa las variables que solicita:
+   - `ADMIN_PASSWORD`: contraseña segura para el usuario `admin`; se usa solo al crear la cuenta por primera vez.
+   - `ALLOWED_ORIGINS`: URL exacta del sitio estático, por ejemplo `https://pizza-negocio-web.onrender.com` (sin `/` al final).
+   - `VITE_API_URL`: URL exacta del servicio `pizza-negocio-api`, por ejemplo `https://pizza-negocio-api.onrender.com` (sin `/` al final).
+3. Confirma el despliegue. La API inicializa las tablas y carga pizzas de ejemplo al arrancar.
+4. Comprueba `https://<url-del-api>/api/health`; debe responder con `"status": "OK"` y PostgreSQL conectado. El sitio público y el panel estarán en la URL del servicio estático y `.../admin.html`.
+
+Si Render asigna URLs distintas, utiliza las URLs reales de tus servicios. `ADMIN_PASSWORD` solo se aplica al crear el administrador; cambiar la variable después no cambia la contraseña existente. Los planes gratuitos de Render tienen límites y la base de datos gratuita vence después de 30 días; para conservar datos en producción elige un plan de PostgreSQL con persistencia.
+
 ## Arranque con Docker
 
 ```bash
@@ -61,7 +75,7 @@ npm install --prefix frontend
 npm run build
 ```
 
-Sube el repo incluyendo `docs/`. El menú, pedidos y admin usan el backend (`/api` → `http://localhost:3000`). El menú estático `menu.json` solo sirve como datos de ejemplo para GitHub Pages si no hay servidor.
+Sube el repo incluyendo `docs/`. Para GitHub Pages configura `VITE_API_URL` con la URL pública del backend antes de generar el sitio. El menú estático `menu.json` solo sirve como datos de ejemplo si no hay servidor.
 
 Para fotos de las pizzas, pon la URL en `frontend/public/menu.json` (`imagen_url`) y vuelve a ejecutar `npm run build`.
 

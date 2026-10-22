@@ -1,7 +1,7 @@
 const { Pool } = require("pg");
 require("dotenv").config();
 
-// Railway provee DATABASE_URL; en local se usan las variables individuales
+// Render and Railway provide DATABASE_URL; local development uses individual variables.
 const pool = process.env.DATABASE_URL
   ? new Pool({
       connectionString: process.env.DATABASE_URL,
