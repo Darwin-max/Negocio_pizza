@@ -4,23 +4,23 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Pizza Negocio | Pide en línea y recoge con tu código</title>
+    <title>El Callejón | Pizza para pedir por WhatsApp</title>
     <meta
       name="description"
-      content="Pizza Negocio: elige tu pizza, voltea la carta para ver detalles, confirma tu pedido y recógelo con tu código de confirmación."
+      content="Explora las pizzas de El Callejón, encuentra tu favorita y envía tu pedido directamente por WhatsApp."
     />
     <meta name="theme-color" content="#18181b" />
     <meta name="robots" content="index, follow" />
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="Pizza Negocio | Pide en línea" />
+    <meta property="og:title" content="El Callejón | Pide por WhatsApp" />
     <meta
       property="og:description"
-      content="Menú interactivo en 3D, pedido rápido y retiro con código de confirmación."
+      content="Menú interactivo en 3D, búsqueda de pizzas y pedidos sencillos por WhatsApp."
     />
     <meta property="og:locale" content="es_CO" />
-    <script type="module" crossorigin src="./assets/main-CT45_wdm.js"></script>
+    <script type="module" crossorigin src="./assets/main-FVWV02uj.js"></script>
     <link rel="modulepreload" crossorigin href="./assets/api-B-s7tTxe.js">
-    <link rel="stylesheet" crossorigin href="./assets/main-DQiKCYqe.css">
+    <link rel="stylesheet" crossorigin href="./assets/main-25q2zH4W.css">
   </head>
   <body>
     <div class="site">
@@ -29,10 +29,12 @@
           <a class="site-brand" href="#inicio">
             <span class="site-brand-icon" aria-hidden="true">🍕</span>
             <span class="site-brand-text">
-              <strong>Pizza Negocio</strong>
-              <small>Pide y recoge</small>
+              <strong>El Callejón</strong>
+              <small>Pizzería · pedidos por WhatsApp</small>
             </span>
           </a>
+
+          <span class="site-status"><span></span> Pedidos en línea</span>
 
           <button
             type="button"
@@ -54,6 +56,14 @@
             <a href="#contacto">Contacto</a>
           </nav>
 
+          <a class="header-whatsapp" data-whatsapp-link href="https://wa.me/573122759195" target="_blank" rel="noopener noreferrer">
+            <svg class="whatsapp-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none">
+              <path d="M20.4 11.7a8.3 8.3 0 0 1-12.3 7.2L3.8 20l1.1-4.2a8.3 8.3 0 1 1 15.5-4.1Z" />
+              <path d="M9 8.7c.2-.4.4-.4.7-.4h.5l.9 2.1-1 .9c.6 1.2 1.5 2.1 2.8 2.8l.8-1 2.1.9v.5c0 .3-.1.6-.4.7-.8.4-1.7.4-2.6.1-2.2-.8-4.2-2.7-5-5-.3-.9-.2-1.8.2-2.6Z" />
+            </svg>
+            <span>WhatsApp</span>
+          </a>
+
           <button
             type="button"
             id="btn-abrir-carrito"
@@ -70,15 +80,15 @@
         <section class="hero" aria-labelledby="hero-title">
           <div class="hero-inner">
             <div class="hero-content">
-              <p class="hero-badge">Carta 3D · Pedidos en línea · Retiro con código</p>
-              <h1 id="hero-title">Tu pizza favorita, lista para recoger</h1>
+              <p class="hero-badge"><span></span> Menú para pedir · Pedidos en línea</p>
+              <h1 id="hero-title">Una buena pizza cambia el día.</h1>
               <p class="hero-lead">
-                Toca una carta para ver ingredientes y precio. Arma tu pedido
-                y confirma: recibirás un código para retirar en el local.
+                Elige tu favorita, descubre cada detalle y arma el pedido a tu gusto.
+                Puedes pedir desde aquí o escribirnos directamente.
               </p>
               <div class="hero-actions">
-                <a href="#menu" class="btn btn-primary">Ver menú y pedir</a>
-                <a href="#como-funciona" class="btn btn-secondary">Cómo funciona</a>
+                <a href="#menu" class="btn btn-primary">Explorar el menú <span aria-hidden="true">→</span></a>
+                <a data-whatsapp-link href="https://wa.me/573122759195" target="_blank" rel="noopener noreferrer" class="btn btn-whatsapp"><svg class="whatsapp-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none"><path d="M20.4 11.7a8.3 8.3 0 0 1-12.3 7.2L3.8 20l1.1-4.2a8.3 8.3 0 1 1 15.5-4.1Z" /><path d="M9 8.7c.2-.4.4-.4.7-.4h.5l.9 2.1-1 .9c.6 1.2 1.5 2.1 2.8 2.8l.8-1 2.1.9v.5c0 .3-.1.6-.4.7-.8.4-1.7.4-2.6.1-2.2-.8-4.2-2.7-5-5-.3-.9-.2-1.8.2-2.6Z" /></svg>Pide por WhatsApp</a>
               </div>
             </div>
             <div class="hero-visual" aria-hidden="true">
@@ -89,8 +99,8 @@
               </div>
               <div class="hero-card hero-card-accent">
                 <span>✓</span>
-                <p>Pago confirmado</p>
-                <strong>Código de retiro</strong>
+                <p>Pedido directo</p>
+                <strong>Por WhatsApp</strong>
               </div>
             </div>
           </div>
@@ -99,27 +109,64 @@
         <section class="benefits" aria-label="Ventajas">
           <div class="benefits-inner">
             <article class="benefit-card">
-              <h2>Pedido rápido</h2>
-              <p>Agrega al carrito, confirma y listo. Sin formularios largos.</p>
+              <span class="benefit-icon" aria-hidden="true">✦</span>
+              <h2>Elige tu favorita</h2>
+              <p>Explora las opciones del menú y encuentra la que se te antoje.</p>
             </article>
             <article class="benefit-card">
-              <h2>Stock al día</h2>
-              <p>Solo se pueden pedir las pizzas disponibles en este momento.</p>
+              <span class="benefit-icon" aria-hidden="true">◎</span>
+              <h2>Menú disponible</h2>
+              <p>Consulta las pizzas disponibles antes de armar tu pedido.</p>
             </article>
             <article class="benefit-card">
-              <h2>Retiro seguro</h2>
-              <p>Un código único para recoger tu pedido en el local.</p>
+              <span class="benefit-icon" aria-hidden="true">↗</span>
+              <h2>Pide fácil</h2>
+              <p>Ordena en línea o escríbenos por WhatsApp.</p>
             </article>
           </div>
         </section>
 
         <section class="menu-section" id="menu" aria-labelledby="menu-title">
           <div class="section-heading">
-            <p class="section-kicker">Nuestro menú</p>
-            <h2 id="menu-title">Elige y voltea la carta</h2>
+            <p class="section-kicker">Pizzería El Callejón</p>
+            <h2 id="menu-title">Nuestro menú</h2>
             <p class="section-desc">
-              Toca o haz clic en cada pizza para ver el reverso. Precios en pesos colombianos.
+              Busca por nombre o ingrediente, filtra y arma tu pedido.
             </p>
+          </div>
+          <div class="catalog-tools" aria-label="Buscar y filtrar el menú">
+            <label class="catalog-search">
+              <span class="sr-only">Buscar pizzas</span>
+              <svg aria-hidden="true" viewBox="0 0 24 24" fill="none">
+                <circle cx="10.8" cy="10.8" r="6.8"></circle>
+                <path d="m16 16 4.5 4.5"></path>
+              </svg>
+              <input id="menu-search" type="search" placeholder="Buscar pizza o ingrediente..." autocomplete="off" />
+              <button id="clear-menu-search" class="search-clear" type="button" aria-label="Borrar búsqueda" hidden>×</button>
+            </label>
+            <div id="menu-categories" class="menu-categories" aria-label="Categorías del menú"></div>
+            <details class="catalog-filter">
+              <summary>
+                <span><span aria-hidden="true">☷</span> Filtrar catálogo</span>
+                <span class="filter-summary-hint">Orden y disponibilidad <span aria-hidden="true">⌄</span></span>
+              </summary>
+              <div class="catalog-filter-options">
+                <label class="catalog-sort">
+                  Ordenar por
+                  <select id="menu-sort">
+                    <option value="featured">Recomendados</option>
+                    <option value="price-asc">Menor precio</option>
+                    <option value="price-desc">Mayor precio</option>
+                    <option value="name">Nombre A-Z</option>
+                  </select>
+                </label>
+                <label class="available-filter">
+                  <input id="available-only" type="checkbox" />
+                  <span>Mostrar solo disponibles</span>
+                </label>
+              </div>
+            </details>
+            <p id="menu-results-count" class="menu-results-count" aria-live="polite"></p>
           </div>
           <div id="pizzas-cliente" class="pizzas-cliente">
             <div class="menu-loading" role="status">Cargando menú...</div>
@@ -128,24 +175,24 @@
 
         <section class="steps-section" id="como-funciona" aria-labelledby="steps-title">
           <div class="section-heading section-heading-light">
-            <p class="section-kicker">Proceso simple</p>
-            <h2 id="steps-title">Cómo hacer tu pedido</h2>
+            <p class="section-kicker">Así de fácil</p>
+            <h2 id="steps-title">Tu antojo, en tres pasos</h2>
           </div>
           <ol class="steps-list">
             <li class="step-card">
               <span class="step-number">1</span>
-              <h3>Voltea la carta</h3>
-              <p>Revisa ingredientes y agrega las pizzas disponibles.</p>
+              <h3>Elige tu pizza</h3>
+              <p>Explora el menú y encuentra la combinación que más te guste.</p>
             </li>
             <li class="step-card">
               <span class="step-number">2</span>
-              <h3>Confirma y paga</h3>
-              <p>Abre tu pedido, revisa el total y confirma.</p>
+              <h3>Arma tu pedido</h3>
+              <p>Añade tus favoritas al carrito y revisa el resumen.</p>
             </li>
             <li class="step-card">
               <span class="step-number">3</span>
-              <h3>Guarda tu código</h3>
-              <p>Preséntalo en el local para retirar tu pizza.</p>
+              <h3>Escríbenos</h3>
+              <p>Envía tu pedido completo por WhatsApp para confirmar los detalles.</p>
             </li>
           </ol>
         </section>
@@ -153,30 +200,32 @@
         <section class="contact-section" id="contacto" aria-labelledby="contact-title">
           <div class="contact-inner">
             <div>
-              <p class="section-kicker">Contacto</p>
-              <h2 id="contact-title">¿Listo para pedir?</h2>
+              <p class="section-kicker">Estamos para ayudarte</p>
+              <h2 id="contact-title">Hablemos de pizza.</h2>
               <p class="contact-lead">
-                Haz tu pedido desde esta página. Presenta tu código de confirmación al recoger.
+                ¿Tienes una pregunta o ya sabes qué se te antoja? Escríbenos y te ayudamos con tu pedido.
               </p>
               <ul class="contact-list">
                 <li>
-                  <strong>Retiro en local</strong>
-                  <p>Código de confirmación al pagar.</p>
+                  <span aria-hidden="true">01</span>
+                  <div><strong>Atención directa</strong><p>Resolvemos tus dudas por WhatsApp.</p></div>
                 </li>
                 <li>
-                  <strong>Disponibilidad</strong>
-                  <p>El menú muestra qué pizzas hay ahora.</p>
+                  <span aria-hidden="true">02</span>
+                  <div><strong>Pedido a tu manera</strong><p>Cuéntanos qué quieres pedir.</p></div>
                 </li>
                 <li>
-                  <strong>Pago</strong>
-                  <p>Confirma en el carrito y guarda el código.</p>
+                  <span aria-hidden="true">03</span>
+                  <div><strong>Siempre cerca</strong><p>Estamos a un mensaje de distancia.</p></div>
                 </li>
               </ul>
             </div>
             <aside class="contact-cta">
-              <h3>Haz tu pedido ahora</h3>
-              <p>El menú se actualiza según el inventario cuando el servidor está activo.</p>
-              <a href="#menu" class="btn btn-primary btn-block">Ir al menú</a>
+              <span class="contact-whatsapp-icon" aria-hidden="true">◉</span>
+              <h3>¿Se te antojó?</h3>
+              <p>Escríbenos directo. Te ayudamos a elegir y tomar tu pedido.</p>
+              <a data-whatsapp-link href="https://wa.me/573122759195" target="_blank" rel="noopener noreferrer" class="btn btn-whatsapp btn-block"><svg class="whatsapp-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none"><path d="M20.4 11.7a8.3 8.3 0 0 1-12.3 7.2L3.8 20l1.1-4.2a8.3 8.3 0 1 1 15.5-4.1Z" /><path d="M9 8.7c.2-.4.4-.4.7-.4h.5l.9 2.1-1 .9c.6 1.2 1.5 2.1 2.8 2.8l.8-1 2.1.9v.5c0 .3-.1.6-.4.7-.8.4-1.7.4-2.6.1-2.2-.8-4.2-2.7-5-5-.3-.9-.2-1.8.2-2.6Z" /></svg>Abrir WhatsApp <span aria-hidden="true">↗</span></a>
+              <a href="#menu" class="btn btn-secondary btn-block">Ver el menú</a>
               <button type="button" class="btn btn-outline btn-block" id="btn-abrir-carrito-contacto">
                 Ver mi pedido
               </button>
@@ -187,16 +236,24 @@
 
       <footer class="site-footer">
         <div class="site-footer-inner">
-          <strong>🍕 Pizza Negocio</strong>
+          <strong>🍕 El Callejón</strong>
           <nav class="footer-nav" aria-label="Pie de página">
             <a href="#menu">Menú</a>
             <a href="#como-funciona">Cómo pedir</a>
             <a href="#contacto">Contacto</a>
           </nav>
-          <p class="footer-copy">© 2026 Pizza Negocio. Todos los derechos reservados.</p>
+          <p class="footer-copy">© 2026 El Callejón. Todos los derechos reservados.</p>
         </div>
       </footer>
     </div>
+
+    <a class="whatsapp-float" data-whatsapp-link href="https://wa.me/573122759195" target="_blank" rel="noopener noreferrer" aria-label="Escríbenos por WhatsApp">
+      <svg class="whatsapp-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none">
+        <path d="M20.4 11.7a8.3 8.3 0 0 1-12.3 7.2L3.8 20l1.1-4.2a8.3 8.3 0 1 1 15.5-4.1Z" />
+        <path d="M9 8.7c.2-.4.4-.4.7-.4h.5l.9 2.1-1 .9c.6 1.2 1.5 2.1 2.8 2.8l.8-1 2.1.9v.5c0 .3-.1.6-.4.7-.8.4-1.7.4-2.6.1-2.2-.8-4.2-2.7-5-5-.3-.9-.2-1.8.2-2.6Z" />
+      </svg>
+      <span>WhatsApp</span>
+    </a>
 
     <div id="carrito-fondo" class="carrito-fondo" aria-hidden="true"></div>
 
@@ -212,11 +269,10 @@
           <span>Total</span>
           <strong id="carrito-total">$0</strong>
         </div>
-        <button type="button" id="btn-confirmar-pedido" class="btn-confirmar">
-          Confirmar y pagar
-        </button>
+        <a id="btn-whatsapp-pedido" class="btn btn-whatsapp btn-block" href="https://wa.me/573122759195" target="_blank" rel="noopener noreferrer">
+          Enviar pedido por WhatsApp
+        </a>
       </div>
-      <div id="pedido-resultado"></div>
     </aside>
 
   </body>

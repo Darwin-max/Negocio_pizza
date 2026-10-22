@@ -54,6 +54,10 @@ El archivo `render.yaml` configura el API de Node, el sitio estático y PostgreS
 
 Si Render asigna URLs distintas, utiliza las URLs reales de tus servicios. `ADMIN_PASSWORD` solo se aplica al crear el administrador; cambiar la variable después no cambia la contraseña existente. Los planes gratuitos de Render tienen límites y la base de datos gratuita vence después de 30 días; para conservar datos en producción elige un plan de PostgreSQL con persistencia.
 
+El número público de WhatsApp se configura en `frontend/src/config/whatsapp.js` en formato internacional, con código de país y solo dígitos.
+
+En la página pública, el menú permite buscar por nombre o ingredientes, filtrar por tipo y disponibilidad, y ordenar por precio o nombre. El cliente arma el pedido en el carrito y el botón **Enviar pedido por WhatsApp** abre un mensaje con el detalle y el total; no se confirma ni se cobra desde la página.
+
 ## Arranque con Docker
 
 ```bash

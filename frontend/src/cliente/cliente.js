@@ -1,10 +1,14 @@
 import { apiUrl } from "../config/api.js";
+import { whatsappUrl } from "../config/whatsapp.js";
 
 const API_PIZZAS = apiUrl("/api/pizzas");
-const API_PEDIDOS = apiUrl("/api/pedidos");
 
 const carrito = [];
 let pizzasCatalogo = [];
+let categoriaSeleccionada = "todo";
+let busquedaMenu = "";
+let soloDisponibles = false;
+let ordenMenu = "featured";
 
 function escapeHtml(valor) {
   return String(valor)
@@ -17,6 +21,32 @@ function escapeHtml(valor) {
 
 function formatearPrecio(valor) {
   return `$${Number(valor).toLocaleString("es-CO")}`;
+}
+
+function textoNormalizado(valor) {
+  return String(valor)
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+}
+
+function categoriaPizza(pizza) {
+  if (pizza.categoria || pizza.category) {
+    return String(pizza.categoria || pizza.category);
+  }
+
+  const nombre = textoNormalizado(pizza.nombre);
+  if (/margarita|pepperoni|hawaiana/.test(nombre)) return "Pizzas clásicas";
+  if (/pizza|quesos|bbq|pollo/.test(nombre)) return "Pizzas especiales";
+  return "Otros";
+}
+
+function pizzaDisponible(pizza) {
+  return (
+    pizza.disponible === true ||
+    pizza.disponible === "t" ||
+    Number(pizza.stock) > 0
+  );
 }
 
 function imagenPizza(pizza) {
@@ -43,6 +73,7 @@ function totalCarrito() {
 function actualizarResumenCarrito() {
   const contador = document.querySelector("#carrito-count");
   const total = document.querySelector("#carrito-total");
+  const whatsappPedido = document.querySelector("#btn-whatsapp-pedido");
 
   if (contador) {
     contador.textContent = String(totalItemsCarrito());
@@ -50,6 +81,23 @@ function actualizarResumenCarrito() {
 
   if (total) {
     total.textContent = formatearPrecio(totalCarrito());
+  }
+
+  if (whatsappPedido && carrito.length > 0) {
+    const detalle = carrito
+      .map(
+        (item) =>
+          `- ${item.cantidad} x ${item.nombre}: ${formatearPrecio(
+            Number(item.precio) * item.cantidad
+          )}`
+      )
+      .join("\n");
+
+    whatsappPedido.href = whatsappUrl(
+      `Hola, El Callejón. Quiero hacer este pedido:\n\n${detalle}\n\nTotal: ${formatearPrecio(
+        totalCarrito()
+      )}`
+    );
   }
 }
 
@@ -93,17 +141,10 @@ function renderCarrito() {
   actualizarResumenCarrito();
 }
 
-function limpiarResultadoPedido() {
-  const resultado = document.querySelector("#pedido-resultado");
-  if (resultado) resultado.innerHTML = "";
-}
-
 export function agregarAlCarrito(pizzaId) {
   const pizza = pizzasCatalogo.find((p) => p.id === pizzaId);
 
-  if (!pizza || !pizza.disponible) return;
-
-  limpiarResultadoPedido();
+  if (!pizza || !pizzaDisponible(pizza)) return;
 
   const existente = carrito.find((item) => item.pizza_id === pizzaId);
 
@@ -127,7 +168,6 @@ function cambiarCantidad(pizzaId, delta) {
 
   if (!item) return;
 
-  limpiarResultadoPedido();
   item.cantidad += delta;
 
   if (item.cantidad <= 0) {
@@ -143,7 +183,6 @@ function quitarDelCarrito(pizzaId) {
 
   if (index === -1) return;
 
-  limpiarResultadoPedido();
   carrito.splice(index, 1);
   renderCarrito();
 }
@@ -168,116 +207,6 @@ function cerrarCarrito() {
   document.body.classList.remove("carrito-abierto");
 }
 
-function mostrarPedidoExito(pedido) {
-  const resultado = document.querySelector("#pedido-resultado");
-  const vacio = document.querySelector("#carrito-vacio");
-
-  if (vacio) vacio.hidden = true;
-
-  if (resultado) {
-    resultado.innerHTML = `
-      <div class="pedido-exito" role="status">
-        <h3>Pedido confirmado</h3>
-        <p>Pedido #${escapeHtml(pedido.id)}</p>
-        <p>Total: ${formatearPrecio(pedido.total)}</p>
-        <p>
-          Código de confirmación:
-          <strong>${escapeHtml(pedido.codigo_confirmacion)}</strong>
-        </p>
-        <p class="pedido-ayuda">
-          Guarda este código para retirar tu pedido en el local.
-        </p>
-      </div>
-    `;
-  }
-}
-
-async function crearYConfirmarPedido() {
-  const boton = document.querySelector("#btn-confirmar-pedido");
-
-  if (carrito.length === 0) return;
-
-  try {
-    if (boton) {
-      boton.disabled = true;
-      boton.textContent = "Procesando...";
-    }
-
-    const cuerpo = {
-      pizzas: carrito.map((item) => ({
-        pizza_id: item.pizza_id,
-        cantidad: item.cantidad,
-      })),
-    };
-
-    const crearResponse = await fetch(API_PEDIDOS, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(cuerpo),
-    });
-
-    const crearData = await crearResponse.json();
-
-    if (!crearResponse.ok) {
-      throw new Error(crearData.error || "No se pudo crear el pedido");
-    }
-
-    const pedidoId = crearData.pedido.id;
-    const pagoResponse = await fetch(`${API_PEDIDOS}/${pedidoId}/confirmar-pago`, {
-      method: "POST",
-    });
-    const pagoData = await pagoResponse.json();
-
-    if (!pagoResponse.ok) {
-      throw new Error(pagoData.error || "No se pudo confirmar el pago");
-    }
-
-    carrito.splice(0, carrito.length);
-    renderCarrito();
-    mostrarPedidoExito(pagoData.pedido);
-    await cargarPizzasCliente();
-  } catch (error) {
-    console.error(error);
-
-    const esLocal = ["localhost", "127.0.0.1"].includes(location.hostname);
-    if (!esLocal) {
-      // Sin backend (GitHub Pages u otro host estático) → modo demo con número único
-      const totalDemo = carrito.reduce((s, i) => s + Number(i.precio) * i.cantidad, 0);
-      const codigoDemo = `PZ-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
-      const idDemo = Date.now().toString().slice(-6);
-      const pedidoDemo = { id: idDemo, total: totalDemo, codigo_confirmacion: codigoDemo };
-
-      carrito.splice(0, carrito.length);
-      renderCarrito();
-      mostrarPedidoExito(pedidoDemo);
-
-      const nota = document.createElement("p");
-      nota.className = "pedido-ayuda";
-      nota.style.cssText = "color:var(--color-muted,#888);font-size:.85em;margin-top:.5rem;";
-      nota.textContent =
-        "Vista de demostración: el servidor no está activo. Presenta este código en el local para confirmar.";
-      document.querySelector("#pedido-resultado .pedido-exito")?.appendChild(nota);
-    } else {
-      // En local mostrar el error en pantalla (no alert) para poder diagnosticarlo
-      const resultado = document.querySelector("#pedido-resultado");
-      if (resultado) {
-        resultado.innerHTML = `
-          <div class="pedido-error" role="alert">
-            <p><strong>No se pudo procesar el pedido</strong></p>
-            <p>${escapeHtml(error.message || "Error desconocido")}</p>
-            <p class="pedido-ayuda">Asegúrate de que el backend esté corriendo: <code>docker compose up -d</code></p>
-          </div>
-        `;
-      }
-    }
-  } finally {
-    if (boton) {
-      boton.disabled = false;
-      boton.textContent = "Confirmar y pagar";
-    }
-  }
-}
-
 function voltearCarta(card, forzar) {
   const abrir = forzar ?? !card.classList.contains("is-flipped");
 
@@ -299,9 +228,6 @@ export function inicializarCarrito() {
     ?.addEventListener("click", abrirCarrito);
   document.querySelector("#btn-cerrar-carrito")?.addEventListener("click", cerrarCarrito);
   document.querySelector("#carrito-fondo")?.addEventListener("click", cerrarCarrito);
-  document
-    .querySelector("#btn-confirmar-pedido")
-    ?.addEventListener("click", crearYConfirmarPedido);
 
   document.querySelector("#carrito-lista")?.addEventListener("click", (event) => {
     const boton = event.target.closest("button[data-action]");
@@ -349,6 +275,10 @@ export function inicializarNavegacion() {
   const nav = document.querySelector("#site-nav");
   const header = document.querySelector(".site-header");
 
+  document.querySelectorAll("[data-whatsapp-link]").forEach((link) => {
+    link.href = whatsappUrl("Hola, quisiera información sobre el menú de El Callejón.");
+  });
+
   toggle?.addEventListener("click", () => {
     const abierto = nav?.classList.toggle("abierto");
     toggle.setAttribute("aria-expanded", abierto ? "true" : "false");
@@ -368,6 +298,198 @@ export function inicializarNavegacion() {
     },
     { passive: true }
   );
+}
+
+function renderCategoriasMenu() {
+  const contenedor = document.querySelector("#menu-categories");
+  if (!contenedor) return;
+
+  const categorias = [
+    ...new Set(pizzasCatalogo.map(categoriaPizza)),
+  ];
+  const opciones = [
+    { id: "todo", nombre: "Todo", cantidad: pizzasCatalogo.length },
+    ...categorias.map((nombre) => ({
+      id: textoNormalizado(nombre),
+      nombre,
+      cantidad: pizzasCatalogo.filter(
+        (pizza) => categoriaPizza(pizza) === nombre
+      ).length,
+    })),
+  ];
+
+  contenedor.innerHTML = opciones
+    .map(
+      (opcion) => `
+        <button type="button" class="menu-category${categoriaSeleccionada === opcion.id ? " activo" : ""}"
+          data-category="${escapeHtml(opcion.id)}" aria-pressed="${categoriaSeleccionada === opcion.id}">
+          <span>${escapeHtml(opcion.nombre)}</span>
+          <span class="category-count">${opcion.cantidad}</span>
+        </button>
+      `
+    )
+    .join("");
+}
+
+function pizzasFiltradas() {
+  let resultado = pizzasCatalogo.filter((pizza) => {
+    const categoria = categoriaPizza(pizza);
+    const coincideCategoria =
+      categoriaSeleccionada === "todo" ||
+      textoNormalizado(categoria) === categoriaSeleccionada;
+    const texto = textoNormalizado(`${pizza.nombre} ${pizza.descripcion || ""}`);
+    const coincideBusqueda = texto.includes(textoNormalizado(busquedaMenu));
+    const coincideDisponibilidad = !soloDisponibles || pizzaDisponible(pizza);
+
+    return coincideCategoria && coincideBusqueda && coincideDisponibilidad;
+  });
+
+  if (ordenMenu === "price-asc") {
+    resultado = resultado.sort((a, b) => Number(a.precio) - Number(b.precio));
+  } else if (ordenMenu === "price-desc") {
+    resultado = resultado.sort((a, b) => Number(b.precio) - Number(a.precio));
+  } else if (ordenMenu === "name") {
+    resultado = resultado.sort((a, b) =>
+      a.nombre.localeCompare(b.nombre, "es")
+    );
+  }
+
+  return resultado;
+}
+
+function renderPizzasFiltradas() {
+  const contenedor = document.querySelector("#pizzas-cliente");
+  const contador = document.querySelector("#menu-results-count");
+  if (!contenedor) return;
+
+  const pizzas = pizzasFiltradas();
+
+  if (contador) {
+    contador.textContent = `Mostrando ${pizzas.length} de ${pizzasCatalogo.length} ${
+      pizzasCatalogo.length === 1 ? "producto" : "productos"
+    }`;
+  }
+
+  if (pizzas.length === 0) {
+    contenedor.innerHTML = `
+      <div class="menu-empty" role="status">
+        <p>No encontramos pizzas con esos filtros.</p>
+        <button type="button" class="btn btn-secondary" id="clear-menu-filters">Limpiar filtros</button>
+      </div>
+    `;
+    contenedor.querySelector("#clear-menu-filters")?.addEventListener("click", () => {
+      categoriaSeleccionada = "todo";
+      busquedaMenu = "";
+      soloDisponibles = false;
+      ordenMenu = "featured";
+      const busqueda = document.querySelector("#menu-search");
+      const disponibles = document.querySelector("#available-only");
+      const orden = document.querySelector("#menu-sort");
+      if (busqueda) busqueda.value = "";
+      if (disponibles) disponibles.checked = false;
+      if (orden) orden.value = "featured";
+      const borrar = document.querySelector("#clear-menu-search");
+      if (borrar) borrar.hidden = true;
+      renderCategoriasMenu();
+      renderPizzasFiltradas();
+    });
+    return;
+  }
+
+  contenedor.innerHTML = pizzas
+    .map((pizza) => {
+      const nombre = escapeHtml(pizza.nombre);
+      const descripcion = escapeHtml(pizza.descripcion);
+      const disponible = pizzaDisponible(pizza);
+
+      return `
+        <article class="pizza-card-3d ${disponible ? "" : "pizza-card-agotada"}"
+          data-flip
+          role="button"
+          tabindex="0"
+          aria-expanded="false"
+          aria-label="${nombre}: tocar para ver detalles"
+        >
+          <div class="pizza-face pizza-face-1">
+            <div class="pizza-face-top">
+              <span class="pizza-badge-3d ${disponible ? "disponible" : "agotada"} hide">
+                ${disponible ? "✓ Disponible" : "✗ Agotada"}
+              </span>
+              <h3 class="pizza-nombre-3d hide">${nombre}</h3>
+              <p class="pizza-desc-3d hide">${descripcion}</p>
+            </div>
+            <div class="pizza-face-bottom">
+              <strong class="pizza-precio-3d hide">${formatearPrecio(pizza.precio)}</strong>
+              <span class="pizza-hint hide">👆 Ver detalles</span>
+            </div>
+          </div>
+
+          <div class="pizza-face pizza-face-2">
+            <div class="pizza-face-top">
+              <h3 class="pizza-nombre-back hide">${nombre}</h3>
+              <p class="pizza-desc-back hide">${descripcion}</p>
+            </div>
+            <div class="pizza-face-bottom">
+              <strong class="pizza-precio-back hide">${formatearPrecio(pizza.precio)}</strong>
+              ${
+                disponible
+                  ? `<button type="button" class="btn-add-3d hide" data-add="${pizza.id}">🛒 Agregar al carrito</button>`
+                  : `<span class="btn-add-3d btn-add-3d-disabled hide">Sin stock</span>`
+              }
+            </div>
+          </div>
+
+          <div class="pizza-img-wrapper">
+            <div class="pizza-img-float">
+              ${imagenPizza(pizza)}
+            </div>
+          </div>
+        </article>
+      `;
+    })
+    .join("");
+}
+
+function inicializarFiltrosMenu() {
+  const busqueda = document.querySelector("#menu-search");
+  const borrarBusqueda = document.querySelector("#clear-menu-search");
+  const categorias = document.querySelector("#menu-categories");
+  const disponibles = document.querySelector("#available-only");
+  const orden = document.querySelector("#menu-sort");
+
+  busqueda?.addEventListener("input", () => {
+    busquedaMenu = busqueda.value.trim();
+    if (borrarBusqueda) borrarBusqueda.hidden = !busquedaMenu;
+    renderPizzasFiltradas();
+  });
+
+  borrarBusqueda?.addEventListener("click", () => {
+    if (busqueda) {
+      busqueda.value = "";
+      busqueda.focus();
+    }
+    busquedaMenu = "";
+    borrarBusqueda.hidden = true;
+    renderPizzasFiltradas();
+  });
+
+  categorias?.addEventListener("click", (event) => {
+    const boton = event.target.closest("button[data-category]");
+    if (!boton) return;
+    categoriaSeleccionada = boton.dataset.category;
+    renderCategoriasMenu();
+    renderPizzasFiltradas();
+  });
+
+  disponibles?.addEventListener("change", () => {
+    soloDisponibles = disponibles.checked;
+    renderPizzasFiltradas();
+  });
+
+  orden?.addEventListener("change", () => {
+    ordenMenu = orden.value;
+    renderPizzasFiltradas();
+  });
 }
 
 async function obtenerPizzas() {
@@ -398,61 +520,9 @@ export async function cargarPizzasCliente() {
       return;
     }
 
-    contenedor.innerHTML = pizzasCatalogo
-      .map((pizza) => {
-        const nombre = escapeHtml(pizza.nombre);
-        const descripcion = escapeHtml(pizza.descripcion);
-        const disponible =
-          pizza.disponible === true ||
-          pizza.disponible === "t" ||
-          Number(pizza.stock) > 0;
-
-        return `
-          <article class="pizza-card-3d ${disponible ? "" : "pizza-card-agotada"}"
-            data-flip
-            role="button"
-            tabindex="0"
-            aria-expanded="false"
-            aria-label="${nombre}: tocar para ver detalles"
-          >
-            <div class="pizza-face pizza-face-1">
-              <div class="pizza-face-top">
-                <span class="pizza-badge-3d ${disponible ? "disponible" : "agotada"} hide">
-                  ${disponible ? "✓ Disponible" : "✗ Agotada"}
-                </span>
-                <h3 class="pizza-nombre-3d hide">${nombre}</h3>
-                <p class="pizza-desc-3d hide">${descripcion}</p>
-              </div>
-              <div class="pizza-face-bottom">
-                <strong class="pizza-precio-3d hide">${formatearPrecio(pizza.precio)}</strong>
-                <span class="pizza-hint hide">👆 Ver detalles</span>
-              </div>
-            </div>
-
-            <div class="pizza-face pizza-face-2">
-              <div class="pizza-face-top">
-                <h3 class="pizza-nombre-back hide">${nombre}</h3>
-                <p class="pizza-desc-back hide">${descripcion}</p>
-              </div>
-              <div class="pizza-face-bottom">
-                <strong class="pizza-precio-back hide">${formatearPrecio(pizza.precio)}</strong>
-                ${
-                  disponible
-                    ? `<button type="button" class="btn-add-3d hide" data-add="${pizza.id}">🛒 Agregar al pedido</button>`
-                    : `<span class="btn-add-3d btn-add-3d-disabled hide">Sin stock</span>`
-                }
-              </div>
-            </div>
-
-            <div class="pizza-img-wrapper">
-              <div class="pizza-img-float">
-                ${imagenPizza(pizza)}
-              </div>
-            </div>
-          </article>
-        `;
-      })
-      .join("");
+    renderCategoriasMenu();
+    renderPizzasFiltradas();
+    inicializarFiltrosMenu();
   } catch (error) {
     console.error(error);
     contenedor.innerHTML = `
