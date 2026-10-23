@@ -29,6 +29,8 @@ services:
         sync: false
       - key: WHATSAPP_GRAPH_API_VERSION
         sync: false
+      - key: WHATSAPP_MENU_URL
+        sync: false
       - key: GEMINI_API_KEY
         sync: false
       - key: GEMINI_MODEL

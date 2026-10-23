@@ -11,27 +11,69 @@ const formatearPrecio = (precio) =>
   `$${Number(precio).toLocaleString("es-CO")}`;
 
 const mensajeRedes =
-  "📲 Más información:\nInstagram: https://www.instagram.com/elcallejon_n4496?psln=MXVsbGRteXI3MW51Mg==\nFacebook: https://www.facebook.com/profile.php?id=61595493282153";
+  "📲 *Síguenos y contáctanos*\n📸 Instagram: https://www.instagram.com/elcallejon_n4496/\n📘 Facebook: https://www.facebook.com/profile.php?id=61595493282153";
+const enlaceMenu =
+  process.env.WHATSAPP_MENU_URL || "https://darwin-max.github.io/Negocio_pizza/";
+const numeroNequi = "312 406 0135";
 
 const pizzaDisponible = (pizza) =>
   pizza.activo === true && Number(pizza.stock) > 0;
 
-const listarPizzas = (pizzas) =>
-  pizzas
-    .filter(pizzaDisponible)
-    .map((pizza) => `🍕 ${pizza.nombre} — ${formatearPrecio(pizza.precio)}`)
-    .join("\n");
+const iconoProducto = (producto) => {
+  const categoria = normalizar(producto.categoria || "");
+  if (categoria.includes("bebida") || categoria.includes("granizado")) return "🥤";
+  if (categoria.includes("hamburguesa")) return "🍔";
+  if (categoria.includes("acompanamiento")) return "🍟";
+  if (categoria.includes("postre")) return "🍰";
+  if (categoria.includes("combo")) return "🥡";
+  return "🍕";
+};
+
+const crearMenuNumerado = (pizzas, omitidaId) => {
+  const categorias = new Map();
+  const disponibles = pizzas.filter(pizzaDisponible);
+  disponibles.forEach((producto, indice) => {
+    const categoria = producto.categoria || "Pizzas";
+    const productos = categorias.get(categoria) || [];
+    productos.push({ ...producto, numeroMenu: indice + 1 });
+    categorias.set(categoria, productos);
+  });
+
+  const texto = [...categorias]
+    .filter(([, productos]) =>
+      productos.some((producto) => producto.id !== omitidaId)
+    )
+    .map(([categoria, productos]) => {
+      const encabezado = `*${iconoProducto(productos[0])} ${categoria}*`;
+      const opciones = productos
+        .filter((producto) => producto.id !== omitidaId)
+        .map(
+          ({ numeroMenu, nombre, precio }) =>
+            `${numeroMenu}. ${nombre} — *${formatearPrecio(precio)}*`
+        )
+        .join("\n");
+      return `${encabezado}\n${opciones}`;
+    })
+    .join("\n\n");
+
+  const tieneOpciones = disponibles.some(
+    (producto) => producto.id !== omitidaId
+  );
+  return { texto: tieneOpciones ? texto : "", productos: disponibles };
+};
+
+const listarPizzas = (pizzas, omitidaId) =>
+  crearMenuNumerado(pizzas, omitidaId).texto;
 
 const sugerirDisponibles = (pizzas, omitidaId) => {
   const disponibles = pizzas
-    .filter((pizza) => pizzaDisponible(pizza) && pizza.id !== omitidaId)
-    .slice(0, 3);
+    .filter((pizza) => pizzaDisponible(pizza) && pizza.id !== omitidaId);
 
   if (disponibles.length === 0) {
-    return "Por ahora no tengo otras pizzas disponibles. Escríbenos más tarde para consultar de nuevo.";
+    return "Por ahora no tengo otros productos disponibles. Escríbenos más tarde para consultar de nuevo.";
   }
 
-  return `Estas sí están disponibles:\n${listarPizzas(disponibles)}`;
+  return `✅ *Otras opciones disponibles*\n${listarPizzas(pizzas, omitidaId)}\n\nPuedes responder con el número del menú o escribir el nombre del producto.`;
 };
 
 const encontrarPizza = (mensaje, pizzas) => {
@@ -64,25 +106,25 @@ const responderDisponibilidad = (mensaje, pizzas) => {
   if (!pizza) return null;
 
   if (!pizzaDisponible(pizza)) {
-    return `En este momento ${pizza.nombre} no está disponible 😕.\n${sugerirDisponibles(
+    return `😕 *${pizza.nombre} no está disponible por ahora.*\n\n${sugerirDisponibles(
       pizzas,
       pizza.id
     )}`;
   }
 
-  return `¡Sí tenemos ${pizza.nombre}! 🍕\nPrecio: ${formatearPrecio(
+  return `${iconoProducto(pizza)} *¡Sí tenemos ${pizza.nombre}!*\n\n💰 *Precio:* ${formatearPrecio(
     pizza.precio
-  )}.\n${pizza.descripcion}\n\n¿Quieres agregarla a tu pedido?`;
+  )}\n📝 ${pizza.descripcion}\n\n¿Quieres agregarlo a tu pedido?`;
 };
 
 const responderMenu = (pizzas) => {
   const lista = listarPizzas(pizzas);
 
   if (!lista) {
-    return "Por ahora no hay pizzas disponibles. Escríbenos más tarde y con gusto revisamos.";
+    return "😕 Por ahora no hay productos disponibles. Escríbenos más tarde y con gusto revisamos.";
   }
 
-  return `¡Hola! 👋 Este es nuestro menú disponible:\n${lista}\n\nDime cuál quieres pedir y cuántas.\n\n${mensajeRedes}`;
+  return `📋 *Menú disponible:*\n\n${lista}\n\n🛍️ Para pedir, responde con el número y la cantidad, por ejemplo: *1 x 2, 3 x 1*.\nLos números son únicos en todo el menú, aunque esté agrupado por secciones.\n\n🌐 Ver menú completo: ${enlaceMenu}\n\n${mensajeRedes}`;
 };
 
 const responderInformacion = (mensaje) => {
@@ -91,24 +133,24 @@ const responderInformacion = (mensaje) => {
 
   if (/\b(pago|pagos|pagar|aceptan|acepta|nequi|efectivo|transferencias?)\b/.test(texto)) {
     respuestas.push(
-      "💳 Recibimos efectivo, transferencia y Nequi. El equipo te confirma los datos para pagar al validar tu pedido."
+      `💳 *Métodos de pago:*\n• Efectivo\n• Transferencia (te confirmamos los datos)\n• Nequi: *${numeroNequi}*`
     );
   }
 
   if (/\b(domicilio|domicilios|domiciliario|envio|envios|entrega)\b/.test(texto)) {
     respuestas.push(
-      "🛵 El costo y la cobertura del domicilio están pendientes de confirmación. Envíanos tu barrio o dirección y el equipo te confirma el valor."
+      "🛵 *Domicilios:* el costo y la cobertura están pendientes de confirmación. Envíanos tu barrio o dirección y te confirmamos el valor."
     );
   }
 
   if (/\b(salsa|salsas)\b/.test(texto)) {
     respuestas.push(
-      "🥫 Podemos anotar tu solicitud de salsa adicional; su disponibilidad y precio están pendientes de confirmación por el equipo."
+      "🥫 Podemos anotar tu solicitud de salsa adicional. Su disponibilidad y precio están pendientes de confirmación."
     );
   }
 
   if (/\b(redes|facebook|instagram|informacion|contacto)\b/.test(texto)) {
-    respuestas.push(`Encuéntranos en nuestras redes:\n${mensajeRedes}`);
+    respuestas.push(`📲 *Encuéntranos en nuestras redes:*\n${mensajeRedes}`);
   }
 
   return respuestas.length ? respuestas.join("\n\n") : null;
@@ -117,7 +159,7 @@ const responderInformacion = (mensaje) => {
 const cantidadAntesDe = (texto, indice) => {
   const antes = texto.slice(Math.max(0, indice - 24), indice);
   const coincidencia = antes.match(
-    /(?:^|\s)(\d+|un|uno|una|dos|tres|cuatro|cinco|seis)\s+(?:pizza?s?\s+)?$/
+    /(?:^|\s)(\d+|un|uno|una|dos|tres|cuatro|cinco|seis)\s+(?:(?:x|pizza|hamburguesa|bebida|granizado|producto)s?\s+)?$/
   );
   if (!coincidencia) return 1;
 
@@ -135,7 +177,42 @@ const cantidadAntesDe = (texto, indice) => {
   return Number.isInteger(cantidad) && cantidad > 0 ? cantidad : 1;
 };
 
+const detectarSeleccionNumerica = (mensaje, pizzas) => {
+  const partes = String(mensaje)
+    .trim()
+    .split(/\s*(?:[,;]|\by\b)\s*/i);
+  const selecciones = partes.map((parte) =>
+    parte.match(/^(\d+)(?:\s*[x×]\s*(\d+))?$/i)
+  );
+
+  if (partes.length === 0 || selecciones.some((seleccion) => !seleccion)) {
+    return null;
+  }
+
+  const { productos } = crearMenuNumerado(pizzas);
+  const coincidencias = [];
+  for (const seleccion of selecciones) {
+    const numero = Number(seleccion[1]);
+    const cantidad = Number(seleccion[2] || 1);
+    if (
+      !Number.isSafeInteger(numero) ||
+      numero < 1 ||
+      numero > productos.length ||
+      !Number.isSafeInteger(cantidad) ||
+      cantidad < 1
+    ) {
+      return { error: true, coincidencias: [] };
+    }
+    coincidencias.push({ pizza: productos[numero - 1], cantidad });
+  }
+
+  return { error: false, coincidencias };
+};
+
 const detectarPizzasEnMensaje = (mensaje, pizzas) => {
+  const seleccionNumerica = detectarSeleccionNumerica(mensaje, pizzas);
+  if (seleccionNumerica) return seleccionNumerica.coincidencias;
+
   const texto = normalizar(mensaje);
   const encontradas = [];
   const ordenadas = [...pizzas].sort(
@@ -202,6 +279,7 @@ const resumirPedido = (pedido, pizzas) => {
       const subtotal = Number(pizza.precio) * item.cantidad;
       return {
         nombre: pizza.nombre,
+        categoria: pizza.categoria || "Pizzas",
         cantidad: item.cantidad,
         subtotal,
       };
@@ -211,22 +289,29 @@ const resumirPedido = (pedido, pizzas) => {
   const detalle = items
     .map(
       (item) =>
-        `• ${item.cantidad} × ${item.nombre}: ${formatearPrecio(item.subtotal)}`
+        `• ${item.cantidad} × ${iconoProducto(item)} *${item.nombre}* — *${formatearPrecio(
+          item.subtotal
+        )}*`
     )
     .join("\n");
   const notas = [...pedido.notas];
   if (pedido.direccion) notas.push(`Domicilio solicitado: ${pedido.direccion}`);
   if (pedido.metodo_pago) notas.push(`Método de pago preferido: ${pedido.metodo_pago}`);
   const detalleNotas = notas.length
-    ? `\n\n📝 Solicitudes:\n${notas.map((nota) => `• ${nota}`).join("\n")}`
+    ? `\n\n📝 *Solicitudes:*\n${notas.map((nota) => `• ${nota}`).join("\n")}`
     : "";
+  const detallePago = pedido.metodo_pago
+    ? `💳 *Método de pago:* ${pedido.metodo_pago}${
+        pedido.metodo_pago === "Nequi" ? ` (${numeroNequi})` : ""
+      }`
+    : `💳 *Elige cómo pagar:* efectivo, transferencia o Nequi (${numeroNequi}).`;
 
   return {
     items,
     subtotal,
-    respuesta: `🧾 Tu pedido:\n${detalle}\n\nSubtotal de pizzas: ${formatearPrecio(
+    respuesta: `🧾 *RESUMEN DE TU PEDIDO*\n\n${detalle}\n\n💵 *Subtotal:* *${formatearPrecio(
       subtotal
-    )}${detalleNotas}\n\nEl costo de domicilio y cualquier salsa adicional están pendientes de confirmación, así que el total final puede cambiar. Escribe “confirmar pedido” para registrarlo pendiente de pago, agrega otro producto o escribe “cancelar pedido”.\n\n${mensajeRedes}`,
+    )}*${detalleNotas}\n\n${detallePago}\n🚚 El domicilio y los extras se confirman aparte; por eso el total final puede cambiar.\n\n✅ Cuando estés listo, escribe *CONFIRMAR PEDIDO* para registrarlo.\n➕ Puedes agregar productos o escribir *CANCELAR PEDIDO*.\n\n${mensajeRedes}`,
   };
 };
 
@@ -249,7 +334,17 @@ const procesarConversacion = (mensaje, pizzas, pedidoGuardado) => {
   }
 
   const confirmar = mensajeConfirmaPedido(mensaje);
-  const coincidencias = detectarPizzasEnMensaje(mensaje, pizzas);
+  const seleccionNumerica = detectarSeleccionNumerica(mensaje, pizzas);
+  if (seleccionNumerica?.error) {
+    return {
+      accion: tienePedido ? "guardar" : "ninguna",
+      pedido: tienePedido ? pedido : null,
+      respuesta: `No encontré ese número en el menú disponible. Escribe *menú* para ver las opciones numeradas${tienePedido ? " y conservaré tu pedido actual" : ""}.`,
+    };
+  }
+  const coincidencias =
+    seleccionNumerica?.coincidencias ||
+    detectarPizzasEnMensaje(mensaje, pizzas);
   const consulta = mensajeEsConsulta(mensaje);
   const info = responderInformacion(mensaje);
   const metodoPago = detectarMetodoPago(mensaje);
@@ -304,7 +399,7 @@ const procesarConversacion = (mensaje, pizzas, pedidoGuardado) => {
         return {
           accion: tienePedido ? "guardar" : "ninguna",
           pedido: tienePedido ? pedido : null,
-          respuesta: `Solo hay ${pizza.stock} ${pizza.nombre} disponibles. Dime cuántas deseas agregar.`,
+          respuesta: `Solo hay ${pizza.stock} ${pizza.nombre} disponibles. Dime cuántos deseas agregar.`,
         };
       }
       if (existente) existente.cantidad = total;
@@ -316,7 +411,14 @@ const procesarConversacion = (mensaje, pizzas, pedidoGuardado) => {
     if (pedido.items.length === 0) {
       return {
         accion: "ninguna",
-        respuesta: "Aún no tienes productos en el pedido. Escribe qué pizza y cuántas quieres. 🍕",
+        respuesta: "Aún no tienes productos en el pedido. Escribe qué producto y cuántos quieres. 🍕",
+      };
+    }
+    if (!pedido.metodo_pago) {
+      return {
+        accion: "guardar",
+        pedido,
+        respuesta: `🧾 Ya tengo tu pedido listo. Antes de registrarlo, dime cómo vas a pagar:\n\n• *Efectivo*\n• *Transferencia*\n• *Nequi* al ${numeroNequi}\n\nDespués escribe *CONFIRMAR PEDIDO* para registrarlo.`,
       };
     }
     return {
@@ -333,10 +435,13 @@ const procesarConversacion = (mensaje, pizzas, pedidoGuardado) => {
   }
 
   if (info && coincidencias.length === 0) {
+    const respuesta = tienePedido
+      ? `${info}\n\n${resumirPedido(pedido, pizzas).respuesta}`
+      : info;
     return {
       accion: tienePedido ? "guardar" : pedido.notas.length > 0 ? "guardar" : "ninguna",
       pedido: tienePedido || pedido.notas.length > 0 ? pedido : null,
-      respuesta: info,
+      respuesta,
     };
   }
 
@@ -357,7 +462,7 @@ const procesarConversacion = (mensaje, pizzas, pedidoGuardado) => {
       pedido,
       respuesta:
         respuestaAutomatica(mensaje, pizzas) ||
-        "Anoté tus solicitudes. Dime qué pizzas quieres y cuántas para armar el pedido. 🍕",
+        "Anoté tus solicitudes. Dime qué productos quieres y cuántos para armar el pedido. 🍕",
     };
   }
 
@@ -372,7 +477,7 @@ const procesarConversacion = (mensaje, pizzas, pedidoGuardado) => {
     return {
       accion: "guardar",
       pedido,
-      respuesta: `¡Claro! 🍕 Dime qué pizzas quieres y cuántas. Puedes preguntar por pagos, domicilio o salsa extra. ${info || ""}`,
+      respuesta: `¡Claro! Dime qué productos quieres y cuántos. Puedes preguntar por pagos, domicilio o salsa extra. ${info || ""}`,
     };
   }
 
@@ -397,11 +502,7 @@ const respuestaAutomatica = (mensaje, pizzas) => {
   }
 
   if (/^(hola|buenas|buenos dias|buenas tardes|buenas noches|hey|holi)\b/.test(texto)) {
-    const lista = listarPizzas(pizzas);
-    const menu = lista
-      ? `Nuestro menú disponible:\n${lista}\n\nDime cuál quieres pedir y cuántas.`
-      : "Por ahora no hay pizzas disponibles. Escríbenos más tarde y con gusto revisamos.";
-    return `¡Hola! 👋 Soy el asistente de El Callejón. Puedo ayudarte con el menú, tu pedido, pagos, domicilio y salsa extra.\n\n${menu}\n\n${mensajeRedes}`;
+    return `👋 *¡Hola! Soy el asistente de El Callejón.*\nPuedo ayudarte con el menú, tu pedido, pagos, domicilio y salsa extra.\n\n${responderMenu(pizzas)}`;
   }
 
   return null;
@@ -410,6 +511,7 @@ const respuestaAutomatica = (mensaje, pizzas) => {
 const prepararMenuParaIA = (pizzas) =>
   pizzas.map((pizza) => ({
     nombre: pizza.nombre,
+    categoria: pizza.categoria || "Pizzas",
     descripcion: pizza.descripcion,
     precio: formatearPrecio(pizza.precio),
     disponible: pizzaDisponible(pizza),

@@ -4,23 +4,23 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>El Callejón | Pizza para pedir por WhatsApp</title>
+    <title>El Callejón | Menú y combos para pedir por WhatsApp</title>
     <meta
       name="description"
-      content="Explora las pizzas de El Callejón, encuentra tu favorita y envía tu pedido directamente por WhatsApp."
+      content="Explora el menú y los combos de El Callejón, encuentra tus favoritos y envía tu pedido directamente por WhatsApp."
     />
     <meta name="theme-color" content="#18181b" />
     <meta name="robots" content="index, follow" />
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="El Callejón | Pide por WhatsApp" />
+    <meta property="og:title" content="El Callejón | Menú y combos" />
     <meta
       property="og:description"
-      content="Menú interactivo en 3D, búsqueda de pizzas y pedidos sencillos por WhatsApp."
+      content="Menú interactivo en 3D, combos, búsqueda de productos y pedidos sencillos por WhatsApp."
     />
     <meta property="og:locale" content="es_CO" />
-    <script type="module" crossorigin src="./assets/main-BD4oLBDv.js"></script>
+    <script type="module" crossorigin src="./assets/main-DoDzYITe.js"></script>
     <link rel="modulepreload" crossorigin href="./assets/api-B-s7tTxe.js">
-    <link rel="stylesheet" crossorigin href="./assets/main-CRW-fgj3.css">
+    <link rel="stylesheet" crossorigin href="./assets/main-H7wr38zj.css">
   </head>
   <body>
     <div class="site">
@@ -42,6 +42,7 @@
           </a>
 
           <nav class="site-nav" id="site-nav" aria-label="Principal">
+            <a href="#combos">Combos</a>
             <a href="#menu">Menú</a>
           </nav>
         </div>
@@ -51,7 +52,7 @@
         <section class="catalog-banner" aria-labelledby="catalog-banner-title">
           <div class="catalog-banner-copy">
             <h1 id="catalog-banner-title">Delivery, Pick Up o visítanos en el local</h1>
-            <p>Escoge tu pizza favorita y disfrútala como más te guste.</p>
+            <p>Escoge tus favoritos y disfrútalos como más te guste.</p>
             <ul class="catalog-banner-tags" aria-label="Opciones para pedir">
               <li>🛵 Domicilio</li>
               <li>🥡 Para recoger</li>
@@ -61,16 +62,22 @@
           <span class="catalog-banner-art" aria-hidden="true">🍕</span>
         </section>
 
+        <section class="menu-section combos-section" id="combos" aria-labelledby="combos-title" hidden>
+          <h2 id="combos-title">Combos para compartir</h2>
+          <p class="combos-intro">Disfruta tus favoritos en una sola opción. ✨</p>
+          <div id="combos-cliente" class="pizzas-cliente"></div>
+        </section>
+
         <section class="menu-section" id="menu" aria-labelledby="menu-title">
           <h2 id="menu-title" class="sr-only">Nuestro menú</h2>
           <div class="catalog-tools" aria-label="Buscar y filtrar el menú">
             <label class="catalog-search">
-              <span class="sr-only">Buscar pizzas</span>
+              <span class="sr-only">Buscar productos</span>
               <svg aria-hidden="true" viewBox="0 0 24 24" fill="none">
                 <circle cx="10.8" cy="10.8" r="6.8"></circle>
                 <path d="m16 16 4.5 4.5"></path>
               </svg>
-              <input id="menu-search" type="search" placeholder="Buscar pizza o ingrediente..." autocomplete="off" />
+              <input id="menu-search" type="search" placeholder="Buscar producto o ingrediente..." autocomplete="off" />
               <button id="clear-menu-search" class="search-clear" type="button" aria-label="Borrar búsqueda" hidden>×</button>
             </label>
             <div id="menu-categories" class="menu-categories" aria-label="Categorías del menú"></div>
@@ -145,7 +152,7 @@
         <h2>Tu pedido</h2>
         <button type="button" id="btn-cerrar-carrito" class="btn-cerrar">Cerrar</button>
       </div>
-      <p id="carrito-vacio" class="carrito-vacio">Aún no has agregado pizzas.</p>
+      <p id="carrito-vacio" class="carrito-vacio">Aún no has agregado productos.</p>
       <div id="carrito-lista" class="carrito-lista"></div>
       <div id="carrito-acciones" class="carrito-acciones" hidden>
         <div class="carrito-total">

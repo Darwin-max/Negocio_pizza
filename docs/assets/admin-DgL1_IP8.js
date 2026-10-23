@@ -34,7 +34,7 @@ import{t as e}from"./api-B-s7tTxe.js";var t=e(`/api`),n=`pizza_admin_token`,r=[]
           <p>${u(r.promedio_pedido)}</p>
         </article>
         <article class="stat-card">
-          <h3>Pizza más vendida</h3>
+          <h3>Producto más vendido</h3>
           <p>
             ${r.pizza_mas_vendida?`${r.pizza_mas_vendida.nombre} (${r.pizza_mas_vendida.cantidad_vendida})`:`Sin datos`}
           </p>
@@ -120,7 +120,7 @@ import{t as e}from"./api-B-s7tTxe.js";var t=e(`/api`),n=`pizza_admin_token`,r=[]
       </div>
     `,await Promise.all([_(),h()])}catch(e){r.innerHTML=`<p class="error">${e.message}</p>`}finally{i&&(i.disabled=!1)}}async function y(){try{r=await l(`/pizzas/admin`),b()}catch(e){if(console.error(e),String(e.message).includes(`Sesión`)){window.location.reload();return}document.querySelector(`#admin-pizzas`).innerHTML=`
       <p class="error">${e.message}</p>
-    `}}function b(){let e=document.querySelector(`#admin-pizzas`);if(e){if(r.length===0){e.innerHTML=`<p>No hay pizzas registradas.</p>`;return}e.innerHTML=r.map(e=>`
+    `}}function b(){let e=document.querySelector(`#admin-pizzas`);if(e){if(r.length===0){e.innerHTML=`    <p>No hay productos registrados.</p>`;return}e.innerHTML=r.map(e=>`
         <article class="pizza-card ${e.activo?``:`desactivada`}">
           <div class="pizza-image">
             ${e.imagen_url?`<img src="${e.imagen_url}" alt="${e.nombre}" />`:`<div class="pizza-placeholder">Sin imagen</div>`}
@@ -133,6 +133,7 @@ import{t as e}from"./api-B-s7tTxe.js";var t=e(`/api`),n=`pizza_admin_token`,r=[]
               </span>
             </div>
             <p>${e.descripcion}</p>
+            <span class="producto-categoria">${f(e.categoria||`Pizzas`)}</span>
             <strong>${u(e.precio)}</strong>
             <span>Stock: ${e.stock}</span>
             <div class="pizza-actions">
@@ -141,7 +142,7 @@ import{t as e}from"./api-B-s7tTxe.js";var t=e(`/api`),n=`pizza_admin_token`,r=[]
             </div>
           </div>
         </article>
-      `).join(``)}}window.editarPizza=function(e){let t=r.find(t=>t.id===e);t&&(document.querySelector(`#pizza-id`).value=t.id,document.querySelector(`#nombre`).value=t.nombre,document.querySelector(`#descripcion`).value=t.descripcion,document.querySelector(`#precio`).value=t.precio,document.querySelector(`#stock`).value=t.stock,document.querySelector(`#imagen_url`).value=t.imagen_url||``,document.querySelector(`#activo`).checked=t.activo,document.querySelector(`#form-title`).textContent=`Editar pizza`,document.querySelector(`#pizza-form`)?.scrollIntoView({behavior:`smooth`}))},window.desactivarPizza=async function(e){if(confirm(`¿Seguro que quieres desactivar esta pizza?`))try{await l(`/pizzas/${e}`,{method:`DELETE`}),await y()}catch(e){alert(e.message)}},window.activarPizza=async function(e){try{await l(`/pizzas/${e}/activar`,{method:`PATCH`}),await y()}catch(e){alert(e.message)}};async function x(e){e.preventDefault();let t=document.querySelector(`#pizza-id`).value,n={nombre:document.querySelector(`#nombre`).value,descripcion:document.querySelector(`#descripcion`).value,precio:Number(document.querySelector(`#precio`).value),stock:Number(document.querySelector(`#stock`).value),imagen_url:document.querySelector(`#imagen_url`).value,activo:document.querySelector(`#activo`).checked};try{t?await l(`/pizzas/${t}`,{method:`PUT`,body:JSON.stringify(n)}):await l(`/pizzas`,{method:`POST`,body:JSON.stringify(n)}),S(),await Promise.all([y(),h()]),alert(t?`Pizza actualizada correctamente`:`Pizza creada correctamente`)}catch(e){alert(e.message)}}function S(){document.querySelector(`#pizza-form`).reset(),document.querySelector(`#pizza-id`).value=``,document.querySelector(`#activo`).checked=!0,document.querySelector(`#form-title`).textContent=`Nueva pizza`}window.limpiarFormulario=S;async function C(){await Promise.all([h(),_(),y(),g()])}var w=new Date;c()?(document.querySelector(`#app`).innerHTML=`
+      `).join(``)}}window.editarPizza=function(e){let t=r.find(t=>t.id===e);t&&(document.querySelector(`#pizza-id`).value=t.id,document.querySelector(`#nombre`).value=t.nombre,document.querySelector(`#descripcion`).value=t.descripcion,document.querySelector(`#precio`).value=t.precio,document.querySelector(`#stock`).value=t.stock,document.querySelector(`#imagen_url`).value=t.imagen_url||``,document.querySelector(`#categoria`).value=t.categoria||`Pizzas`,document.querySelector(`#activo`).checked=t.activo,document.querySelector(`#form-title`).textContent=`Editar producto`,document.querySelector(`#pizza-form`)?.scrollIntoView({behavior:`smooth`}))},window.desactivarPizza=async function(e){if(confirm(`¿Seguro que quieres desactivar este producto?`))try{await l(`/pizzas/${e}`,{method:`DELETE`}),await y()}catch(e){alert(e.message)}},window.activarPizza=async function(e){try{await l(`/pizzas/${e}/activar`,{method:`PATCH`}),await y()}catch(e){alert(e.message)}};async function x(e){e.preventDefault();let t=document.querySelector(`#pizza-id`).value,n={nombre:document.querySelector(`#nombre`).value,descripcion:document.querySelector(`#descripcion`).value,precio:Number(document.querySelector(`#precio`).value),stock:Number(document.querySelector(`#stock`).value),imagen_url:document.querySelector(`#imagen_url`).value,categoria:document.querySelector(`#categoria`).value.trim(),activo:document.querySelector(`#activo`).checked};try{t?await l(`/pizzas/${t}`,{method:`PUT`,body:JSON.stringify(n)}):await l(`/pizzas`,{method:`POST`,body:JSON.stringify(n)}),S(),await Promise.all([y(),h()]),alert(t?`Producto actualizado correctamente`:`Producto creado correctamente`)}catch(e){alert(e.message)}}function S(){document.querySelector(`#pizza-form`).reset(),document.querySelector(`#pizza-id`).value=``,document.querySelector(`#activo`).checked=!0,document.querySelector(`#categoria`).value=`Pizzas`,document.querySelector(`#form-title`).textContent=`Nuevo producto`}window.limpiarFormulario=S;async function C(){await Promise.all([h(),_(),y(),g()])}var w=new Date;c()?(document.querySelector(`#app`).innerHTML=`
     <main class="admin">
       <header class="admin-header">
         <div>
@@ -211,7 +212,7 @@ import{t as e}from"./api-B-s7tTxe.js";var t=e(`/api`),n=`pizza_admin_token`,r=[]
         </form>
 
         <form id="pizza-form" class="pizza-form">
-          <h2 id="form-title">Nueva pizza</h2>
+          <h2 id="form-title">Nuevo producto</h2>
           <input type="hidden" id="pizza-id" />
 
           <div class="form-grid">
@@ -222,6 +223,20 @@ import{t as e}from"./api-B-s7tTxe.js";var t=e(`/api`),n=`pizza_admin_token`,r=[]
             <div class="form-group">
               <label>Precio</label>
               <input id="precio" type="number" min="0" required />
+            </div>
+            <div class="form-group">
+              <label for="categoria">Categoría</label>
+              <input id="categoria" type="text" list="categorias-producto" maxlength="80" required value="Pizzas" />
+              <datalist id="categorias-producto">
+                <option value="Pizzas"></option>
+                <option value="Hamburguesas"></option>
+                <option value="Bebidas"></option>
+                <option value="Granizados"></option>
+                <option value="Acompañamientos"></option>
+                <option value="Postres"></option>
+                <option value="Combos"></option>
+                <option value="Otros"></option>
+              </datalist>
             </div>
             <div class="form-group full">
               <label>Descripción</label>
@@ -238,21 +253,21 @@ import{t as e}from"./api-B-s7tTxe.js";var t=e(`/api`),n=`pizza_admin_token`,r=[]
             <div class="form-group">
               <label>
                 <input id="activo" type="checkbox" checked />
-                Pizza activa
+                Producto activo
               </label>
             </div>
           </div>
 
           <div class="form-buttons">
-            <button type="submit">Guardar pizza</button>
+            <button type="submit">Guardar producto</button>
             <button type="button" class="secondary" id="btn-limpiar">Limpiar</button>
           </div>
         </form>
 
         <section>
-          <h2>🍕 Pizzas registradas</h2>
+          <h2>📦 Productos registrados</h2>
           <div id="admin-pizzas" class="pizzas-grid">
-            <p>Cargando pizzas...</p>
+            <p>Cargando productos...</p>
           </div>
         </section>
 

@@ -13,6 +13,8 @@ CREATE TABLE IF NOT EXISTS pizzas (
 
     imagen_url TEXT,
 
+    categoria VARCHAR(80) NOT NULL DEFAULT 'Pizzas',
+
     activo BOOLEAN NOT NULL DEFAULT TRUE,
 
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,

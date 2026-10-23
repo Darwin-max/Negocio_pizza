@@ -4,9 +4,9 @@ Sistema de inventario, pedidos y administración para una pizzería.
 
 ## Qué incluye
 
-- Catálogo de pizzas para el cliente (disponible / agotada)
+- Catálogo de productos por categoría (pizzas, hamburguesas, bebidas, granizados y otras), con filtros de disponibilidad
 - Carrito, creación de pedido, confirmación de pago y código de entrega
-- Panel admin con login JWT: dashboard, pedidos, reportes, CRUD de pizzas y finalización por código
+- Panel admin con login JWT: dashboard, pedidos, reportes, CRUD de productos y finalización por código
 - PostgreSQL + Docker
 - Descuento de stock al confirmar pago (transacciones + `FOR UPDATE`)
 - Cancelación de pedidos (restaura stock si ya estaba pagado)
@@ -54,6 +54,7 @@ El archivo `render.yaml` configura el API de Node, el sitio estático y PostgreS
    - `WHATSAPP_ACCESS_TOKEN`: token de acceso de WhatsApp Cloud API.
    - `WHATSAPP_PHONE_NUMBER_ID`: ID del número que aparece en la configuración de WhatsApp de Meta.
    - `WHATSAPP_GRAPH_API_VERSION`: versión Graph API habilitada para tu app, por ejemplo `v25.0`.
+   - `WHATSAPP_MENU_URL`: enlace público del catálogo, opcional; por defecto se usa `https://darwin-max.github.io/Negocio_pizza/`.
    - `GEMINI_API_KEY`: opcional. Si la configuras, Gemini responde preguntas generales usando el menú actual; sin ella, funcionan las respuestas automáticas de menú y disponibilidad.
 3. Confirma el despliegue. La API inicializa las tablas y carga pizzas de ejemplo al arrancar.
 4. Comprueba `https://<url-del-api>/api/health`; debe responder con `"status": "OK"` y PostgreSQL conectado. El sitio público y el panel estarán en la URL del servicio estático y `.../admin.html`.
@@ -67,11 +68,11 @@ El número público de WhatsApp se configura en `frontend/src/config/whatsapp.js
 
 La política de privacidad pública está en `frontend/privacy.html`; después de desplegar el sitio estático se publica en `https://<url-del-sitio>/privacy.html`. Usa la URL real del servicio `pizza-negocio-web` en Meta. La política informa sobre el tratamiento de mensajes por Meta, el alojamiento en Render y el uso opcional de Gemini.
 
-El webhook del bot está en `backend/src/routes/whatsapp.routes.js`. Contesta sobre el menú y consulta en tiempo real el stock y estado activo de PostgreSQL; cuando una pizza está agotada o desactivada, ofrece alternativas disponibles. También responde sobre efectivo, transferencia, Nequi, domicilio, salsas adicionales y las redes oficiales (Instagram: `https://www.instagram.com/elcallejon_n4496?psln=MXVsbGRteXI3MW51Mg==`; Facebook: `https://www.facebook.com/profile.php?id=61595493282153`). Los borradores de pedidos se conservan por 24 horas; el cliente puede agregar productos en varios mensajes, consultar el resumen y registrarlo al confirmar. Los pedidos de WhatsApp quedan pendientes de pago en el panel y guardan el teléfono, el método de pago preferido, la dirección indicada y las solicitudes. El subtotal se calcula con los precios de las pizzas; como la tarifa de domicilio y el precio de salsa adicional aún no están definidos, el bot los marca como pendientes y no inventa un total final.
+El webhook del bot está en `backend/src/routes/whatsapp.routes.js`. Sus mensajes usan formato compatible con WhatsApp: menú agrupado por categoría, precios destacados, emojis y un resumen claro del pedido. Cada producto disponible recibe un número único en todo el menú; el cliente puede pedir con mensajes como `1 x 2, 3 x 1` o escribiendo el nombre del producto. Antes de registrar el pedido, el bot solicita elegir efectivo, transferencia o Nequi (312 406 0135) y requiere que el cliente escriba `CONFIRMAR PEDIDO`. Consulta en tiempo real el stock y estado activo de PostgreSQL; cuando un producto está agotado o desactivado, ofrece alternativas disponibles. También responde sobre domicilio, salsas adicionales y las redes oficiales (Instagram: `https://www.instagram.com/elcallejon_n4496?psln=MXVsbGRteXI3MW51Mg==`; Facebook: `https://www.facebook.com/profile.php?id=61595493282153`). Los borradores de pedidos se conservan por 24 horas; el cliente puede agregar productos en varios mensajes, consultar el resumen y registrarlo al confirmar. Los pedidos de WhatsApp quedan pendientes de pago en el panel y guardan el teléfono, el método de pago preferido, la dirección indicada y las solicitudes. El subtotal se calcula con los precios de todos los productos; como la tarifa de domicilio y el precio de salsa adicional aún no están definidos, el bot los marca como pendientes y no inventa un total final.
 
 Para preguntas generales puede usar Gemini si `GEMINI_API_KEY` está configurada. En ese caso, el texto entrante del cliente y el menú se envían a la API de Gemini; sin esa variable, no se envían mensajes a un proveedor de IA externo.
 
-En la página pública, el menú permite buscar por nombre o ingredientes, filtrar por tipo y disponibilidad, y ordenar por precio o nombre. El cliente arma el pedido en el carrito y el botón **Enviar pedido por WhatsApp** abre un mensaje con el detalle y el total; no se confirma ni se cobra desde la página.
+En el panel de administración, cada producto tiene una categoría editable (por ejemplo, `Hamburguesas`, `Bebidas`, `Granizados` o `Combos`); las categorías se crean al escribirlas y guardar el producto. Los productos de categoría `Combos` aparecen en una sección destacada independiente, con nombre, descripción, precio fijo, disponibilidad e imagen opcional; también se agregan al carrito como cualquier producto. Las demás categorías aparecen automáticamente como filtros del menú. También se puede buscar por nombre o ingredientes, filtrar por disponibilidad y ordenar por precio o nombre. El cliente arma el pedido en el carrito y el botón **Enviar pedido por WhatsApp** abre un mensaje con el detalle y el total; no se confirma ni se cobra desde la página.
 
 ## Arranque con Docker
 

@@ -1,6 +1,9 @@
 const pizzaModel = require("../models/pizza.model");
 
-const validarDatosPizza = ({ nombre, descripcion, precio, stock }, parcial = false) => {
+const validarDatosPizza = (
+  { nombre, descripcion, precio, stock, categoria },
+  parcial = false
+) => {
   if (!parcial || nombre !== undefined) {
     if (!nombre || !String(nombre).trim()) {
       throw new Error("El nombre es obligatorio");
@@ -28,6 +31,13 @@ const validarDatosPizza = ({ nombre, descripcion, precio, stock }, parcial = fal
       throw new Error("El stock debe ser un entero mayor o igual a 0");
     }
   }
+
+  if (categoria !== undefined) {
+    const categoriaTexto = String(categoria).trim();
+    if (!categoriaTexto || categoriaTexto.length > 80) {
+      throw new Error("La categoría debe tener entre 1 y 80 caracteres");
+    }
+  }
 };
 
 const obtenerPizzas = async () => {
@@ -47,6 +57,9 @@ const crearPizza = async (datosPizza) => {
     descripcion: String(datosPizza.descripcion).trim(),
     precio: Number(datosPizza.precio),
     stock: Number(datosPizza.stock),
+    categoria: datosPizza.categoria
+      ? String(datosPizza.categoria).trim()
+      : "Pizzas",
   });
 };
 
@@ -65,6 +78,9 @@ const actualizarPizza = async (id, datosPizza) => {
     descripcion: String(datosPizza.descripcion).trim(),
     precio: Number(datosPizza.precio),
     stock: Number(datosPizza.stock),
+    categoria: datosPizza.categoria
+      ? String(datosPizza.categoria).trim()
+      : null,
   });
 };
 

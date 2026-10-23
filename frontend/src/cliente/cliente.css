@@ -10,6 +10,15 @@
   color: var(--color-text);
 }
 
+.combos-section[hidden] {
+  display: none;
+}
+
+.combos-intro {
+  margin: -12px 0 32px;
+  color: var(--color-text-muted);
+}
+
 .site-header {
   position: sticky;
   top: 0;

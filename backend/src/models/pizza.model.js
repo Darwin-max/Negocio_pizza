@@ -9,6 +9,7 @@ const obtenerTodas = async () => {
       precio,
       stock,
       imagen_url,
+      categoria,
       activo,
       created_at,
       updated_at
@@ -27,6 +28,7 @@ const obtenerDisponiblesCliente = async () => {
       descripcion,
       precio,
       imagen_url,
+      categoria,
       CASE
         WHEN stock > 0 AND activo = true THEN true
         ELSE false
@@ -44,6 +46,7 @@ const crearPizza = async ({
   precio,
   stock,
   imagen_url,
+  categoria,
 }) => {
   const result = await pool.query(
     `
@@ -52,9 +55,10 @@ const crearPizza = async ({
       descripcion,
       precio,
       stock,
-      imagen_url
+      imagen_url,
+      categoria
     )
-    VALUES ($1, $2, $3, $4, $5)
+    VALUES ($1, $2, $3, $4, $5, $6)
     RETURNING
       id,
       nombre,
@@ -62,11 +66,12 @@ const crearPizza = async ({
       precio,
       stock,
       imagen_url,
+      categoria,
       activo,
       created_at,
       updated_at
     `,
-    [nombre, descripcion, precio, stock, imagen_url]
+    [nombre, descripcion, precio, stock, imagen_url, categoria]
   );
 
   return result.rows[0];
@@ -80,6 +85,7 @@ const actualizarPizza = async (
     precio,
     stock,
     imagen_url,
+    categoria,
     activo,
   }
 ) => {
@@ -92,9 +98,10 @@ const actualizarPizza = async (
       precio = $3,
       stock = $4,
       imagen_url = $5,
-      activo = $6,
+      categoria = COALESCE($6, categoria),
+      activo = $7,
       updated_at = CURRENT_TIMESTAMP
-    WHERE id = $7
+    WHERE id = $8
     RETURNING
       id,
       nombre,
@@ -102,6 +109,7 @@ const actualizarPizza = async (
       precio,
       stock,
       imagen_url,
+      categoria,
       activo,
       created_at,
       updated_at
@@ -112,13 +120,14 @@ const actualizarPizza = async (
       precio,
       stock,
       imagen_url,
+      categoria,
       activo,
       id,
     ]
   );
 
   if (result.rows.length === 0) {
-    throw new Error("La pizza no existe");
+    throw new Error("El producto no existe");
   }
 
   return result.rows[0];
@@ -139,6 +148,7 @@ const desactivarPizza = async (id) => {
       precio,
       stock,
       imagen_url,
+      categoria,
       activo,
       created_at,
       updated_at
@@ -147,7 +157,7 @@ const desactivarPizza = async (id) => {
   );
 
   if (result.rows.length === 0) {
-    throw new Error("La pizza no existe");
+    throw new Error("El producto no existe");
   }
 
   return result.rows[0];
@@ -168,6 +178,7 @@ const activarPizza = async (id) => {
       precio,
       stock,
       imagen_url,
+      categoria,
       activo,
       created_at,
       updated_at
@@ -176,7 +187,7 @@ const activarPizza = async (id) => {
   );
 
   if (result.rows.length === 0) {
-    throw new Error("La pizza no existe");
+    throw new Error("El producto no existe");
   }
 
   return result.rows[0];

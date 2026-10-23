@@ -161,7 +161,7 @@ export async function cargarReporteMensual() {
           <p>${formatearPrecio(data.promedio_pedido)}</p>
         </article>
         <article class="stat-card">
-          <h3>Pizza más vendida</h3>
+          <h3>Producto más vendido</h3>
           <p>
             ${
               data.pizza_mas_vendida
@@ -397,7 +397,7 @@ function mostrarPizzas() {
   if (!contenedor) return;
 
   if (pizzas.length === 0) {
-    contenedor.innerHTML = `<p>No hay pizzas registradas.</p>`;
+    contenedor.innerHTML = `    <p>No hay productos registrados.</p>`;
     return;
   }
 
@@ -420,6 +420,7 @@ function mostrarPizzas() {
               </span>
             </div>
             <p>${pizza.descripcion}</p>
+            <span class="producto-categoria">${escaparHtml(pizza.categoria || "Pizzas")}</span>
             <strong>${formatearPrecio(pizza.precio)}</strong>
             <span>Stock: ${pizza.stock}</span>
             <div class="pizza-actions">
@@ -447,8 +448,9 @@ window.editarPizza = function (id) {
   document.querySelector("#precio").value = pizza.precio;
   document.querySelector("#stock").value = pizza.stock;
   document.querySelector("#imagen_url").value = pizza.imagen_url || "";
+  document.querySelector("#categoria").value = pizza.categoria || "Pizzas";
   document.querySelector("#activo").checked = pizza.activo;
-  document.querySelector("#form-title").textContent = "Editar pizza";
+  document.querySelector("#form-title").textContent = "Editar producto";
 
   document.querySelector("#pizza-form")?.scrollIntoView({
     behavior: "smooth",
@@ -456,7 +458,7 @@ window.editarPizza = function (id) {
 };
 
 window.desactivarPizza = async function (id) {
-  if (!confirm("¿Seguro que quieres desactivar esta pizza?")) return;
+  if (!confirm("¿Seguro que quieres desactivar este producto?")) return;
 
   try {
     await apiFetch(`/pizzas/${id}`, { method: "DELETE" });
@@ -486,6 +488,7 @@ export async function guardarPizza(event) {
     precio: Number(document.querySelector("#precio").value),
     stock: Number(document.querySelector("#stock").value),
     imagen_url: document.querySelector("#imagen_url").value,
+    categoria: document.querySelector("#categoria").value.trim(),
     activo: document.querySelector("#activo").checked,
   };
 
@@ -504,7 +507,7 @@ export async function guardarPizza(event) {
 
     limpiarFormulario();
     await Promise.all([cargarPizzas(), cargarDashboard()]);
-    alert(id ? "Pizza actualizada correctamente" : "Pizza creada correctamente");
+    alert(id ? "Producto actualizado correctamente" : "Producto creado correctamente");
   } catch (error) {
     alert(error.message);
   }
@@ -514,7 +517,8 @@ export function limpiarFormulario() {
   document.querySelector("#pizza-form").reset();
   document.querySelector("#pizza-id").value = "";
   document.querySelector("#activo").checked = true;
-  document.querySelector("#form-title").textContent = "Nueva pizza";
+  document.querySelector("#categoria").value = "Pizzas";
+  document.querySelector("#form-title").textContent = "Nuevo producto";
 }
 
 window.limpiarFormulario = limpiarFormulario;

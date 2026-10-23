@@ -1,36 +1,36 @@
 const pizzaService = require("../services/pizza.service");
 
-// Obtener pizzas para el administrador
+// Obtener productos para el administrador
 const obtenerPizzas = async (req, res) => {
   try {
     const pizzas = await pizzaService.obtenerPizzas();
 
     res.status(200).json(pizzas);
   } catch (error) {
-    console.error("Error al obtener las pizzas:", error);
+    console.error("Error al obtener los productos:", error);
 
     res.status(500).json({
-      error: "No se pudieron obtener las pizzas",
+      error: "No se pudieron obtener los productos",
     });
   }
 };
 
-// Obtener pizzas para el cliente
+// Obtener productos para el cliente
 const obtenerPizzasCliente = async (req, res) => {
   try {
     const pizzas = await pizzaService.obtenerPizzasCliente();
 
     res.status(200).json(pizzas);
   } catch (error) {
-    console.error("Error al obtener las pizzas para el cliente:", error);
+    console.error("Error al obtener los productos para el cliente:", error);
 
     res.status(500).json({
-      error: "No se pudieron obtener las pizzas",
+      error: "No se pudieron obtener los productos",
     });
   }
 };
 
-// Crear una pizza
+// Crear un producto
 const crearPizza = async (req, res) => {
   try {
     const {
@@ -39,6 +39,7 @@ const crearPizza = async (req, res) => {
       precio,
       stock,
       imagen_url,
+      categoria,
     } = req.body;
 
     if (
@@ -58,14 +59,15 @@ const crearPizza = async (req, res) => {
       precio,
       stock,
       imagen_url,
+      categoria,
     });
 
     res.status(201).json(pizza);
   } catch (error) {
-    console.error("Error al crear la pizza:", error);
+    console.error("Error al crear el producto:", error);
 
     res.status(500).json({
-      error: "No se pudo crear la pizza",
+      error: "No se pudo crear el producto",
     });
   }
 };
@@ -80,6 +82,7 @@ const actualizarPizza = async (req, res) => {
       precio,
       stock,
       imagen_url,
+      categoria,
       activo,
     } = req.body;
 
@@ -89,6 +92,7 @@ const actualizarPizza = async (req, res) => {
       precio,
       stock,
       imagen_url,
+      categoria,
       activo,
     });
 
@@ -97,7 +101,7 @@ const actualizarPizza = async (req, res) => {
       pizza,
     });
   } catch (error) {
-    console.error("Error al actualizar pizza:", error);
+    console.error("Error al actualizar producto:", error);
 
     res.status(400).json({
       error: error.message,
@@ -116,7 +120,7 @@ const desactivarPizza = async (req, res) => {
       pizza,
     });
   } catch (error) {
-    console.error("Error al desactivar la pizza:", error);
+    console.error("Error al desactivar el producto:", error);
 
     res.status(400).json({
       error: error.message,
@@ -135,7 +139,7 @@ const activarPizza = async (req, res) => {
       pizza,
     });
   } catch (error) {
-    console.error("Error al activar la pizza:", error);
+    console.error("Error al activar el producto:", error);
 
     res.status(400).json({
       error: error.message,

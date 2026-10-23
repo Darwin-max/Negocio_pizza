@@ -338,6 +338,7 @@
 }
 
 .form-group input,
+.form-group select,
 .form-group textarea {
   width: 100%;
   max-width: 100%;
@@ -473,6 +474,16 @@
 .estado.inactivo {
   background: #fee2e2;
   color: #991b1b;
+}
+
+.producto-categoria {
+  align-self: flex-start;
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: #f4f4f5;
+  color: #52525b;
+  font-size: 0.8rem;
+  font-weight: 650;
 }
 
 .pizza-info p {

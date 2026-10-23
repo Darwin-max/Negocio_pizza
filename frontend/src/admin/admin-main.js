@@ -108,7 +108,7 @@ if (!estaAutenticado()) {
         </form>
 
         <form id="pizza-form" class="pizza-form">
-          <h2 id="form-title">Nueva pizza</h2>
+          <h2 id="form-title">Nuevo producto</h2>
           <input type="hidden" id="pizza-id" />
 
           <div class="form-grid">
@@ -119,6 +119,20 @@ if (!estaAutenticado()) {
             <div class="form-group">
               <label>Precio</label>
               <input id="precio" type="number" min="0" required />
+            </div>
+            <div class="form-group">
+              <label for="categoria">Categoría</label>
+              <input id="categoria" type="text" list="categorias-producto" maxlength="80" required value="Pizzas" />
+              <datalist id="categorias-producto">
+                <option value="Pizzas"></option>
+                <option value="Hamburguesas"></option>
+                <option value="Bebidas"></option>
+                <option value="Granizados"></option>
+                <option value="Acompañamientos"></option>
+                <option value="Postres"></option>
+                <option value="Combos"></option>
+                <option value="Otros"></option>
+              </datalist>
             </div>
             <div class="form-group full">
               <label>Descripción</label>
@@ -135,21 +149,21 @@ if (!estaAutenticado()) {
             <div class="form-group">
               <label>
                 <input id="activo" type="checkbox" checked />
-                Pizza activa
+                Producto activo
               </label>
             </div>
           </div>
 
           <div class="form-buttons">
-            <button type="submit">Guardar pizza</button>
+            <button type="submit">Guardar producto</button>
             <button type="button" class="secondary" id="btn-limpiar">Limpiar</button>
           </div>
         </form>
 
         <section>
-          <h2>🍕 Pizzas registradas</h2>
+          <h2>📦 Productos registrados</h2>
           <div id="admin-pizzas" class="pizzas-grid">
-            <p>Cargando pizzas...</p>
+            <p>Cargando productos...</p>
           </div>
         </section>
 

@@ -92,7 +92,7 @@ const generarRespuestaIA = async (mensaje, pizzas) => {
       systemInstruction: {
         parts: [
           {
-            text: "Eres el asistente de WhatsApp de la pizzería El Callejón en Colombia. Responde en español, breve, amable y natural. Usa solo el menú JSON proporcionado. Se aceptan efectivo, transferencia y Nequi. La cobertura y tarifa del domicilio, y el precio o disponibilidad de salsa adicional, están pendientes de confirmación del equipo. Instagram: https://www.instagram.com/elcallejon_n4496?psln=MXVsbGRteXI3MW51Mg==. Facebook: https://www.facebook.com/profile.php?id=61595493282153. Nunca inventes precios, ingredientes, horarios, domicilios ni disponibilidad. Si no conoces un dato, indica que el equipo lo confirmará. No afirmes que registraste o confirmaste un pedido o pago. Para productos no disponibles, ofrece solo alternativas marcadas como disponibles.",
+            text: "Eres el asistente de WhatsApp de la pizzería El Callejón en Colombia. Responde en español, breve, amable y natural. Usa solo el menú JSON proporcionado. Se aceptan efectivo, transferencia y Nequi; el número de Nequi es 3124060135. La cobertura y tarifa del domicilio, y el precio o disponibilidad de salsa adicional, están pendientes de confirmación del equipo. Instagram: https://www.instagram.com/elcallejon_n4496/. Facebook: https://www.facebook.com/profile.php?id=61595493282153. Nunca inventes precios, ingredientes, horarios, domicilios ni disponibilidad. Si no conoces un dato, indica que el equipo lo confirmará. No afirmes que registraste o confirmaste un pedido o pago. Para productos no disponibles, ofrece solo alternativas marcadas como disponibles.",
           },
         ],
       },
@@ -178,17 +178,19 @@ const crearRespuestaPedidoGuardado = (pedidoCreado) => {
     )
     .join("\n");
   const metodo = pedidoCreado.metodo_pago
-    ? `\nMétodo de pago preferido: ${pedidoCreado.metodo_pago}.`
+    ? `\n💳 *Método de pago:* ${pedidoCreado.metodo_pago}${
+        pedidoCreado.metodo_pago === "Nequi" ? " (312 406 0135)" : ""
+      }.`
     : "";
   const solicitudes = pedidoCreado.notas
     ? `\nSolicitudes: ${pedidoCreado.notas}.`
     : "";
 
-  return `✅ Registré tu pedido #${pedidoCreado.id} en el sistema como pendiente de pago.\n\n🧾 Resumen:\n${detalle}\n\nSubtotal de pizzas: $${Number(
+  return `✅ *¡Pedido #${pedidoCreado.id} registrado!*\nQuedó *pendiente de pago*.\n\n🧾 *Resumen:*\n${detalle}\n\n💵 *Subtotal:* $${Number(
     pedidoCreado.total
   ).toLocaleString(
     "es-CO"
-  )}${metodo}${solicitudes}\n\nEl costo del domicilio y de cualquier salsa adicional está pendiente de confirmación; por eso el total final puede cambiar. El equipo te confirmará el total y los datos de pago.\n\n📲 Más información:\nInstagram: https://www.instagram.com/elcallejon_n4496?psln=MXVsbGRteXI3MW51Mg==\nFacebook: https://www.facebook.com/profile.php?id=61595493282153`;
+  )}${metodo}${solicitudes}\n\n🚚 El costo del domicilio y de cualquier salsa adicional está pendiente de confirmación; por eso el total final puede cambiar. El equipo te confirmará el total final.\n\n📲 *Más información:*\nInstagram: https://www.instagram.com/elcallejon_n4496/\nFacebook: https://www.facebook.com/profile.php?id=61595493282153`;
 };
 
 const responderMensaje = async (mensaje, destinatario) => {
