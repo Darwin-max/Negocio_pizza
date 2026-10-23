@@ -60,6 +60,14 @@ async function initDb() {
       );
     `);
 
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS whatsapp_mensajes_procesados (
+        mensaje_id TEXT PRIMARY KEY,
+        estado VARCHAR(20) NOT NULL,
+        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
     // Admin por defecto: usuario=admin, password=admin123
     const existingAdmin = await client.query(
       "SELECT 1 FROM administradores WHERE usuario = $1",

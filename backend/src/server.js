@@ -35,6 +35,7 @@ app.use(
   })
 );
 
+app.use("/api/whatsapp", require("./routes/whatsapp.routes"));
 app.use(express.json());
 
 app.use("/api/auth", authRoutes);
@@ -81,4 +82,3 @@ initDb()
     console.error("No se pudo inicializar la base de datos:", err);
     process.exit(1);
   });
-
