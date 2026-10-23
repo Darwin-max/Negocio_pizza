@@ -213,21 +213,35 @@ function voltearCarta(card, forzar) {
   document.querySelectorAll(".pizza-card-3d.is-flipped").forEach((otra) => {
     if (otra !== card) {
       otra.classList.remove("is-flipped");
-      otra.setAttribute("aria-expanded", "false");
     }
   });
 
   card.classList.toggle("is-flipped", abrir);
-  card.setAttribute("aria-expanded", abrir ? "true" : "false");
+}
+
+function cerrarRedes() {
+  const panel = document.querySelector("#social-panel");
+
+  if (!panel) return;
+
+  panel.hidden = true;
+  panel.setAttribute("aria-hidden", "true");
+  document
+    .querySelectorAll('.pizza-card-3d button[data-share-pizza][aria-expanded="true"]')
+    .forEach((button) => button.setAttribute("aria-expanded", "false"));
 }
 
 export function inicializarCarrito() {
   document.querySelector("#btn-abrir-carrito")?.addEventListener("click", abrirCarrito);
   document
+    .querySelector("#btn-abrir-carrito-flotante")
+    ?.addEventListener("click", abrirCarrito);
+  document
     .querySelector("#btn-abrir-carrito-contacto")
     ?.addEventListener("click", abrirCarrito);
   document.querySelector("#btn-cerrar-carrito")?.addEventListener("click", cerrarCarrito);
   document.querySelector("#carrito-fondo")?.addEventListener("click", cerrarCarrito);
+  document.querySelector("#social-panel-close")?.addEventListener("click", cerrarRedes);
 
   document.querySelector("#carrito-lista")?.addEventListener("click", (event) => {
     const boton = event.target.closest("button[data-action]");
@@ -249,6 +263,28 @@ export function inicializarCarrito() {
       return;
     }
 
+    const compartir = event.target.closest("button[data-share-pizza]");
+    if (compartir) {
+      event.stopPropagation();
+      const panel = document.querySelector("#social-panel");
+      if (panel) {
+        document
+          .querySelectorAll('.pizza-card-3d button[data-share-pizza][aria-expanded="true"]')
+          .forEach((button) => button.setAttribute("aria-expanded", "false"));
+        panel.hidden = false;
+        panel.setAttribute("aria-hidden", "false");
+        compartir.setAttribute("aria-expanded", "true");
+        panel.querySelector("#social-panel-close")?.focus();
+      }
+      return;
+    }
+
+    const whatsapp = event.target.closest("a[data-card-whatsapp]");
+    if (whatsapp) {
+      event.stopPropagation();
+      return;
+    }
+
     const card = event.target.closest(".pizza-card-3d");
     if (card) {
       voltearCarta(card);
@@ -258,13 +294,16 @@ export function inicializarCarrito() {
   document.querySelector("#pizzas-cliente")?.addEventListener("keydown", (event) => {
     if (event.key !== "Enter" && event.key !== " ") return;
     const card = event.target.closest(".pizza-card-3d");
-    if (!card) return;
+    if (!card || (event.target !== card && event.target.closest("button, a"))) return;
     event.preventDefault();
     voltearCarta(card);
   });
 
   document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape") cerrarCarrito();
+    if (event.key === "Escape") {
+      cerrarCarrito();
+      cerrarRedes();
+    }
   });
 
   renderCarrito();
@@ -401,23 +440,29 @@ function renderPizzasFiltradas() {
       const nombre = escapeHtml(pizza.nombre);
       const descripcion = escapeHtml(pizza.descripcion);
       const disponible = pizzaDisponible(pizza);
+      const imagen = `<div class="pizza-img-wrapper">${imagenPizza(pizza)}</div>`;
+      const pedidoDirecto = whatsappUrl(
+        `Hola, El Callejón. Quiero pedir ${pizza.nombre} por ${formatearPrecio(
+          pizza.precio
+        )}.`
+      );
 
       return `
         <article class="pizza-card-3d ${disponible ? "" : "pizza-card-agotada"}"
           data-flip
-          role="button"
+          role="group"
           tabindex="0"
-          aria-expanded="false"
-          aria-label="${nombre}: tocar para ver detalles"
+          aria-label="${nombre}: carta 3D. Pulsa para ver detalles"
         >
           <div class="pizza-face pizza-face-1">
             <div class="pizza-face-top">
-              <span class="pizza-badge-3d ${disponible ? "disponible" : "agotada"} hide">
+              <span class="pizza-badge-3d ${disponible ? "disponible" : "agotada"}">
                 ${disponible ? "✓ Disponible" : "✗ Agotada"}
               </span>
               <h3 class="pizza-nombre-3d hide">${nombre}</h3>
               <p class="pizza-desc-3d hide">${descripcion}</p>
             </div>
+            ${imagen}
             <div class="pizza-face-bottom">
               <strong class="pizza-precio-3d hide">${formatearPrecio(pizza.precio)}</strong>
               <span class="pizza-hint hide">👆 Ver detalles</span>
@@ -429,19 +474,32 @@ function renderPizzasFiltradas() {
               <h3 class="pizza-nombre-back hide">${nombre}</h3>
               <p class="pizza-desc-back hide">${descripcion}</p>
             </div>
+            ${imagen}
             <div class="pizza-face-bottom">
               <strong class="pizza-precio-back hide">${formatearPrecio(pizza.precio)}</strong>
-              ${
-                disponible
-                  ? `<button type="button" class="btn-add-3d hide" data-add="${pizza.id}">🛒 Agregar al carrito</button>`
-                  : `<span class="btn-add-3d btn-add-3d-disabled hide">Sin stock</span>`
-              }
-            </div>
-          </div>
-
-          <div class="pizza-img-wrapper">
-            <div class="pizza-img-float">
-              ${imagenPizza(pizza)}
+              <div class="pizza-actions hide">
+                <a class="pizza-whatsapp" data-card-whatsapp href="${escapeHtml(
+                  pedidoDirecto
+                )}" target="_blank" rel="noopener noreferrer" aria-label="Pedir ${nombre} por WhatsApp">
+                  <svg class="whatsapp-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none">
+                    <path d="M20.4 11.7a8.3 8.3 0 0 1-12.3 7.2L3.8 20l1.1-4.2a8.3 8.3 0 1 1 15.5-4.1Z" />
+                    <path d="M9 8.7c.2-.4.4-.4.7-.4h.5l.9 2.1-1 .9c.6 1.2 1.5 2.1 2.8 2.8l.8-1 2.1.9v.5c0 .3-.1.6-.4.7-.8.4-1.7.4-2.6.1-2.2-.8-4.2-2.7-5-5-.3-.9-.2-1.8.2-2.6Z" />
+                  </svg>
+                </a>
+                ${
+                  disponible
+                    ? `<button type="button" class="btn-add-3d" data-add="${pizza.id}"><span aria-hidden="true">+</span> Añadir</button>`
+                    : `<span class="btn-add-3d btn-add-3d-disabled">Sin stock</span>`
+                }
+                <button type="button" class="pizza-share" data-share-pizza aria-label="Ver redes sociales" aria-controls="social-panel" aria-expanded="false">
+                  <svg aria-hidden="true" viewBox="0 0 24 24" fill="none">
+                    <circle cx="18" cy="5" r="3" />
+                    <circle cx="6" cy="12" r="3" />
+                    <circle cx="18" cy="19" r="3" />
+                    <path d="m8.7 10.6 6.6-4.2M8.7 13.4l6.6 4.2" />
+                  </svg>
+                </button>
+              </div>
             </div>
           </div>
         </article>

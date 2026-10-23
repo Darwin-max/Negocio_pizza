@@ -277,8 +277,8 @@
 }
 
 .menu-section {
-  padding-top: 50px;
-  padding-bottom: 60px;
+  padding-top: 18px;
+  padding-bottom: 44px;
   scroll-margin-top: calc(var(--header-height) + 20px);
 }
 
@@ -306,7 +306,7 @@
   display: grid;
   gap: 14px;
   max-width: var(--container);
-  margin: 26px auto 0;
+  margin: 0 auto;
 }
 
 .catalog-search {
@@ -522,42 +522,48 @@
 
 .pizza-face-top,
 .pizza-face-bottom {
-  width: 58%;
+  width: 50%;
 }
 
 .pizza-img-wrapper {
-  inset: 0 0 0 auto;
+  inset: 14% 5% auto auto;
   z-index: 10;
-  width: 43%;
-  height: 100%;
+  width: 40%;
+  height: 72%;
   overflow: hidden;
-  border-radius: 0 20px 20px 0;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 20px;
+  background: #101522;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.28);
   transform-style: preserve-3d;
 }
 
 .pizza-img-float {
-  top: 50%;
-  left: 50%;
-  width: 94%;
-  transform: translate(-50%, -50%) translateZ(24px);
-  animation: pizzaSideFloat 3.2s ease-in-out infinite alternate;
-  transition: transform 0.65s ease, opacity 0.4s ease;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transform: translateZ(24px);
+  animation: none;
+  filter: none;
+  transition: opacity 0.4s ease;
 }
 
 .pizza-img-float img,
 .pizza-img-float .pizza-placeholder {
-  aspect-ratio: 1;
-  border-radius: 18px;
+  width: 100%;
+  height: 100%;
+  aspect-ratio: auto;
+  border-radius: 0;
   object-fit: cover;
   transform: none;
 }
 
 .pizza-card-3d:hover .pizza-img-float,
 .pizza-card-3d.is-flipped .pizza-img-float {
-  top: 50%;
-  left: 50%;
-  width: 94%;
-  transform: translate(-50%, -50%) translateZ(24px);
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transform: translateZ(24px);
 }
 
 .pizza-card-3d:hover .pizza-img-float img,
@@ -573,12 +579,16 @@
   visibility: hidden;
 }
 
-@keyframes pizzaSideFloat {
-  from {
-    transform: translate(-50%, calc(-50% - 3px)) translateZ(24px);
-  }
-  to {
-    transform: translate(-50%, calc(-50% + 3px)) translateZ(24px);
+.pizza-card-3d:hover .pizza-face-top,
+.pizza-card-3d:hover .pizza-face-bottom,
+.pizza-card-3d.is-flipped .pizza-face-top,
+.pizza-card-3d.is-flipped .pizza-face-bottom {
+  width: 100%;
+}
+
+@media (max-width: 380px) {
+  .pizza-precio-3d {
+    font-size: 1.4rem;
   }
 }
 
@@ -879,5 +889,425 @@
 @media (prefers-reduced-motion: reduce) {
   .whatsapp-float {
     transition: none;
+  }
+}
+
+.catalog-banner {
+  position: relative;
+  display: flex;
+  max-width: var(--container);
+  min-height: 150px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  overflow: hidden;
+  margin: 18px auto 0;
+  padding: 22px 26px;
+  border: 1px solid rgba(237, 102, 39, 0.36);
+  border-radius: 20px;
+  background:
+    radial-gradient(ellipse at 88% 50%, rgba(225, 92, 38, 0.18), transparent 32%),
+    linear-gradient(110deg, #291a16, #1b1715 72%);
+}
+
+.site-nav {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.catalog-banner-copy {
+  position: relative;
+  z-index: 1;
+}
+
+.catalog-banner h1 {
+  max-width: 36ch;
+  margin: 0;
+  color: #fff8f1;
+  font-size: clamp(1.2rem, 3vw, 1.65rem);
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  line-height: 1.2;
+}
+
+.catalog-banner p {
+  margin: 8px 0 14px;
+  color: #c9bdb3;
+  font-size: 0.9rem;
+}
+
+.catalog-banner-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.catalog-banner-tags li {
+  padding: 6px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 9px;
+  background: rgba(11, 11, 12, 0.35);
+  color: #f3e9df;
+  font-size: 0.76rem;
+  font-weight: 650;
+}
+
+.catalog-banner-art {
+  flex: 0 0 auto;
+  padding: 8px;
+  font-size: clamp(3rem, 7vw, 4.5rem);
+  opacity: 0.7;
+  transform: rotate(-10deg);
+}
+
+.pizza-face {
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 22px 24px;
+  text-align: center;
+}
+
+.pizza-face-top,
+.pizza-face-bottom {
+  width: 100%;
+  align-items: center;
+  gap: 8px;
+}
+
+.pizza-face-top {
+  flex: 0 0 auto;
+}
+
+.pizza-badge-3d {
+  align-self: center;
+}
+
+.pizza-face-bottom {
+  margin-top: 0;
+}
+
+.pizza-nombre-3d,
+.pizza-nombre-back {
+  max-width: 100%;
+}
+
+.pizza-desc-3d,
+.pizza-desc-back {
+  max-width: 100%;
+  text-align: center;
+}
+
+.pizza-desc-back {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.pizza-img-wrapper {
+  position: relative;
+  inset: auto;
+  z-index: 1;
+  width: clamp(340px, 100%, 420px);
+  height: auto;
+  flex: 0 0 auto;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 17px;
+  background: #171819;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.24);
+  pointer-events: none;
+  transform: translateZ(24px);
+  opacity: 1;
+  visibility: visible;
+}
+
+.pizza-card-3d:hover .pizza-img-wrapper,
+.pizza-card-3d.is-flipped .pizza-img-wrapper {
+  opacity: 1;
+  visibility: visible;
+}
+
+.pizza-img-wrapper img,
+.pizza-img-wrapper .pizza-placeholder {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  aspect-ratio: 1;
+  place-items: center;
+  border-radius: 0;
+  object-fit: cover;
+  transform: none;
+}
+
+.pizza-img-wrapper .pizza-placeholder {
+  font-size: 3.4rem;
+}
+
+.pizza-precio-3d,
+.pizza-precio-back {
+  font-size: clamp(1.5rem, 5vw, 2rem);
+}
+
+.pizza-hint {
+  margin-top: -3px;
+}
+
+.pizza-actions {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transform: translateZ(35px);
+}
+
+.pizza-whatsapp,
+.pizza-share {
+  display: inline-grid;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 12px;
+}
+
+.pizza-whatsapp {
+  background: rgba(32, 201, 107, 0.15);
+  color: #45dc88;
+}
+
+.pizza-whatsapp .whatsapp-icon {
+  width: 21px;
+  height: 21px;
+}
+
+.btn-add-3d {
+  min-width: 0;
+  min-height: 42px;
+  flex: 1 1 auto;
+  justify-content: center;
+  gap: 7px;
+  padding: 0 10px;
+  border-radius: 11px;
+  background: linear-gradient(100deg, #ff5823, #e94816);
+  box-shadow: 0 7px 18px rgba(237, 74, 24, 0.24);
+  font-size: 0.84rem;
+  white-space: nowrap;
+}
+
+.btn-add-3d span {
+  font-size: 1.2rem;
+  line-height: 1;
+}
+
+.btn-add-3d-disabled {
+  display: grid;
+  min-height: 42px;
+  place-items: center;
+  flex: 1 1 auto;
+  padding: 0 8px;
+  font-size: 0.76rem;
+  white-space: nowrap;
+}
+
+.pizza-share {
+  border: 0;
+  background: #222530;
+  color: #c6cad5;
+}
+
+.pizza-share svg,
+.quick-action-cart svg {
+  width: 20px;
+  height: 20px;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.pizza-whatsapp:hover,
+.pizza-share:hover {
+  filter: brightness(1.15);
+}
+
+.pizza-card-agotada .pizza-img-wrapper {
+  filter: grayscale(0.75) brightness(0.75);
+}
+
+.quick-actions {
+  position: fixed;
+  right: max(18px, env(safe-area-inset-right));
+  bottom: max(20px, env(safe-area-inset-bottom));
+  z-index: 35;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.quick-action {
+  position: relative;
+  display: grid;
+  width: 58px;
+  height: 58px;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.32);
+  transition: transform 0.18s ease;
+}
+
+.quick-action:hover {
+  transform: translateY(-2px);
+}
+
+.quick-action-cart {
+  background: linear-gradient(145deg, #8455ff, #6f3be9);
+  color: #fff;
+}
+
+.quick-action-cart svg {
+  width: 25px;
+  height: 25px;
+}
+
+.quick-action-whatsapp {
+  background: linear-gradient(145deg, #20c96b, #0ba96a);
+  color: #fff;
+}
+
+.quick-action-whatsapp .whatsapp-icon {
+  width: 25px;
+  height: 25px;
+}
+
+.quick-action .btn-carrito-count {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: grid;
+  min-width: 21px;
+  height: 21px;
+  place-items: center;
+  border: 2px solid #151515;
+  border-radius: 50%;
+  background: #ff5823;
+  color: white;
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+
+.social-panel {
+  position: fixed;
+  right: max(21px, env(safe-area-inset-right));
+  bottom: max(158px, calc(env(safe-area-inset-bottom) + 138px));
+  z-index: 36;
+  display: grid;
+  gap: 8px;
+  justify-items: center;
+  padding: 7px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 28px;
+  background: rgba(17, 18, 21, 0.96);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.36);
+}
+
+.social-panel[hidden] {
+  display: none;
+}
+
+.social-panel-close,
+.social-link {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 50%;
+  color: #fff;
+  font-size: 1.15rem;
+  font-weight: 800;
+}
+
+.social-panel-close {
+  background: #22242a;
+  cursor: pointer;
+}
+
+.social-instagram {
+  background: linear-gradient(145deg, #b733a5, #e74667);
+}
+
+.social-facebook {
+  background: #1769cf;
+}
+
+.social-tiktok {
+  background: #08090c;
+}
+
+@media (max-width: 520px) {
+  .catalog-banner {
+    min-height: 138px;
+    margin: 14px 12px 0;
+    padding: 18px 16px;
+    border-radius: 16px;
+  }
+
+  .catalog-banner p {
+    max-width: 30ch;
+    font-size: 0.82rem;
+  }
+
+  .catalog-banner-tags {
+    gap: 6px;
+  }
+
+  .catalog-banner-tags li {
+    padding: 5px 7px;
+    font-size: 0.68rem;
+  }
+
+  .catalog-banner-art {
+    margin-right: -10px;
+    font-size: 2.8rem;
+  }
+
+  .pizza-face {
+    padding: 20px 22px;
+  }
+
+  .pizza-actions {
+    gap: 7px;
+  }
+
+  .pizza-whatsapp,
+  .pizza-share {
+    width: 40px;
+    height: 40px;
+    flex-basis: 40px;
+  }
+
+  .btn-add-3d {
+    min-height: 40px;
+  }
+
+  .quick-actions {
+    right: max(14px, env(safe-area-inset-right));
+    bottom: max(14px, env(safe-area-inset-bottom));
+    gap: 10px;
+  }
+
+  .quick-action {
+    width: 54px;
+    height: 54px;
   }
 }

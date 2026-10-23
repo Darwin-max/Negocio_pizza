@@ -47,7 +47,8 @@ El archivo `render.yaml` configura el API de Node, el sitio estático y PostgreS
 1. Sube el repositorio a GitHub y en Render crea un **New + → Blueprint** conectado a ese repositorio.
 2. Render detectará `render.yaml`. Al crear los servicios, completa las variables que solicita:
    - `ADMIN_PASSWORD`: contraseña segura para el usuario `admin`; se usa solo al crear la cuenta por primera vez.
-   - `ALLOWED_ORIGINS`: URL exacta del sitio estático, por ejemplo `https://pizza-negocio-web.onrender.com` (sin `/` al final).
+   - `ALLOWED_ORIGINS`: URL exacta del sitio estático, por ejemplo `
+   ` (sin `/` al final).
    - `VITE_API_URL`: URL exacta del servicio `pizza-negocio-api`, por ejemplo `https://pizza-negocio-api.onrender.com` (sin `/` al final).
 3. Confirma el despliegue. La API inicializa las tablas y carga pizzas de ejemplo al arrancar.
 4. Comprueba `https://<url-del-api>/api/health`; debe responder con `"status": "OK"` y PostgreSQL conectado. El sitio público y el panel estarán en la URL del servicio estático y `.../admin.html`.
