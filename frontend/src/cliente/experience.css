@@ -1013,7 +1013,7 @@
   position: relative;
   inset: auto;
   z-index: 1;
-  width: clamp(340px, 100%, 420px);
+  width: clamp(350px, 90%, 380px);
   height: auto;
   flex: 0 0 auto;
   aspect-ratio: 1;
