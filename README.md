@@ -65,6 +65,8 @@ Si Render asigna URLs distintas, utiliza las URLs reales de tus servicios. `ADMI
 
 El número público de WhatsApp se configura en `frontend/src/config/whatsapp.js` en formato internacional, con código de país y solo dígitos.
 
+La política de privacidad pública está en `frontend/privacy.html`; después de desplegar el sitio estático se publica en `https://<url-del-sitio>/privacy.html`. Usa la URL real del servicio `pizza-negocio-web` en Meta. La política informa sobre el tratamiento de mensajes por Meta, el alojamiento en Render y el uso opcional de Gemini.
+
 El webhook del bot está en `backend/src/routes/whatsapp.routes.js`. Contesta sobre el menú y consulta en tiempo real el stock y estado activo de PostgreSQL; cuando una pizza está agotada o desactivada, ofrece alternativas disponibles. Para preguntas generales puede usar Gemini si `GEMINI_API_KEY` está configurada. En ese caso, el texto entrante del cliente y el menú se envían a la API de Gemini; sin esa variable, no se envían mensajes a un proveedor de IA externo.
 
 En la página pública, el menú permite buscar por nombre o ingredientes, filtrar por tipo y disponibilidad, y ordenar por precio o nombre. El cliente arma el pedido en el carrito y el botón **Enviar pedido por WhatsApp** abre un mensaje con el detalle y el total; no se confirma ni se cobra desde la página.

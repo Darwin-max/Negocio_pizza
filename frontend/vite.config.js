@@ -21,6 +21,7 @@ export default defineConfig({
       input: {
         main: resolve(__dirname, "index.html"),
         admin: resolve(__dirname, "admin.html"),
+        privacy: resolve(__dirname, "privacy.html"),
       },
     },
   },
