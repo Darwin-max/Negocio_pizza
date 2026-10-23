@@ -16,6 +16,7 @@ const crearPedido = async (cliente) => {
     let total = 0;
     // Almacenamos los precios del primer loop para reutilizarlos sin queries extra
     const preciosPorPizzaId = {};
+    const nombresPorPizzaId = {};
 
     for (const item of cliente.pizzas) {
       const result = await client.query(
@@ -40,12 +41,24 @@ const crearPedido = async (cliente) => {
       }
 
       preciosPorPizzaId[item.pizza_id] = pizza.precio;
+      nombresPorPizzaId[item.pizza_id] = pizza.nombre;
       total += Number(pizza.precio) * item.cantidad;
     }
 
     const pedidoResult = await client.query(
-      `INSERT INTO pedidos (estado, total) VALUES ($1, $2) RETURNING *`,
-      ["PENDIENTE_PAGO", total]
+      `INSERT INTO pedidos (
+         estado, total, telefono_whatsapp, metodo_pago, direccion, notas
+       )
+       VALUES ($1, $2, $3, $4, $5, $6)
+       RETURNING *`,
+      [
+        "PENDIENTE_PAGO",
+        total,
+        cliente.telefono_whatsapp || null,
+        cliente.metodo_pago || null,
+        cliente.direccion || null,
+        cliente.notas || null,
+      ]
     );
 
     const pedido = pedidoResult.rows[0];
@@ -61,7 +74,17 @@ const crearPedido = async (cliente) => {
     }
 
     await client.query("COMMIT");
-    return pedido;
+    return cliente.incluir_detalles
+      ? {
+          ...pedido,
+          detalles: cliente.pizzas.map((item) => ({
+            pizza_nombre: nombresPorPizzaId[item.pizza_id],
+            cantidad: item.cantidad,
+            subtotal:
+              Number(preciosPorPizzaId[item.pizza_id]) * item.cantidad,
+          })),
+        }
+      : pedido;
   } catch (error) {
     await client.query("ROLLBACK");
     throw error;
@@ -178,7 +201,9 @@ const finalizarPedido = async (pedidoId, codigo) => {
 
 const listarPedidos = async () => {
   const result = await pool.query(
-    `SELECT id, estado, total, pago_confirmado, codigo_confirmacion, codigo_usado, created_at, updated_at FROM pedidos ORDER BY id DESC`
+    `SELECT id, estado, total, pago_confirmado, codigo_confirmacion, codigo_usado,
+            telefono_whatsapp, metodo_pago, direccion, notas, created_at, updated_at
+     FROM pedidos ORDER BY id DESC`
   );
   return result.rows;
 };

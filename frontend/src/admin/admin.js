@@ -61,6 +61,19 @@ function formatearFecha(valor) {
   return new Date(valor).toLocaleString("es-CO");
 }
 
+function escaparHtml(valor) {
+  return String(valor ?? "").replace(/[&<>"']/g, (caracter) => {
+    const entidades = {
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;",
+    };
+    return entidades[caracter];
+  });
+}
+
 export async function loginAdmin(event) {
   event.preventDefault();
 
@@ -211,7 +224,14 @@ export async function cargarPedidos() {
                         ${pedido.estado}
                       </span>
                     </td>
-                    <td>${formatearPrecio(pedido.total)}</td>
+                    <td>
+                      ${formatearPrecio(pedido.total)}
+                      ${
+                        pedido.telefono_whatsapp
+                          ? `<small>Subtotal de pizzas</small>`
+                          : ""
+                      }
+                    </td>
                     <td>${pedido.codigo_confirmacion || "—"}</td>
                     <td>${formatearFecha(pedido.created_at)}</td>
                     <td class="acciones-pedido">
@@ -257,14 +277,34 @@ window.verPedido = async function (id) {
       <div class="pedido-detalle-card">
         <h3>Pedido #${pedido.id}</h3>
         <p><strong>Estado:</strong> ${pedido.estado}</p>
-        <p><strong>Total:</strong> ${formatearPrecio(pedido.total)}</p>
+        <p><strong>${pedido.telefono_whatsapp ? "Subtotal de pizzas" : "Total"}:</strong> ${formatearPrecio(pedido.total)}</p>
         <p><strong>Código:</strong> ${pedido.codigo_confirmacion || "—"}</p>
+        ${
+          pedido.telefono_whatsapp
+            ? `<p><strong>WhatsApp:</strong> ${escaparHtml(pedido.telefono_whatsapp)}</p>`
+            : ""
+        }
+        ${
+          pedido.metodo_pago
+            ? `<p><strong>Método de pago preferido:</strong> ${escaparHtml(pedido.metodo_pago)}</p>`
+            : ""
+        }
+        ${
+          pedido.direccion
+            ? `<p><strong>Dirección / barrio:</strong> ${escaparHtml(pedido.direccion)}</p>`
+            : ""
+        }
+        ${
+          pedido.notas
+            ? `<p><strong>Solicitudes:</strong> ${escaparHtml(pedido.notas)}</p>`
+            : ""
+        }
         <ul>
           ${pedido.detalles
             .map(
               (item) => `
                 <li>
-                  ${item.pizza_nombre} × ${item.cantidad}
+                  ${escaparHtml(item.pizza_nombre)} × ${item.cantidad}
                   — ${formatearPrecio(item.subtotal)}
                 </li>
               `

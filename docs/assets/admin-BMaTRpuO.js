@@ -1,4 +1,4 @@
-import{t as e}from"./api-B-s7tTxe.js";var t=e(`/api`),n=`pizza_admin_token`,r=[],i=[];function a(){return localStorage.getItem(n)}function o(e){localStorage.setItem(n,e)}function s(){localStorage.removeItem(n)}function c(){return!!a()}async function l(e,n={}){let r={"Content-Type":`application/json`,...n.headers||{}},i=a();i&&(r.Authorization=`Bearer ${i}`);let o=await fetch(`${t}${e}`,{...n,headers:r}),c=await o.json().catch(()=>({}));if(o.status===401)throw s(),Error(c.error||`Sesión expirada. Vuelve a iniciar sesión.`);if(!o.ok)throw Error(c.error||`Error en la solicitud`);return c}function u(e){return`$${Number(e).toLocaleString(`es-CO`)}`}function d(e){return new Date(e).toLocaleString(`es-CO`)}async function f(e){e.preventDefault();let t=document.querySelector(`#login-usuario`).value.trim(),n=document.querySelector(`#login-password`).value,r=document.querySelector(`#login-resultado`);try{o((await l(`/auth/login`,{method:`POST`,body:JSON.stringify({usuario:t,password:n})})).token),window.location.reload()}catch(e){r.innerHTML=`<p class="error">${e.message}</p>`}}function p(){s(),window.location.reload()}async function m(){let e=document.querySelector(`#dashboard-stats`);if(e)try{let t=await l(`/reportes/dashboard`);e.innerHTML=`
+import{t as e}from"./api-B-s7tTxe.js";var t=e(`/api`),n=`pizza_admin_token`,r=[],i=[];function a(){return localStorage.getItem(n)}function o(e){localStorage.setItem(n,e)}function s(){localStorage.removeItem(n)}function c(){return!!a()}async function l(e,n={}){let r={"Content-Type":`application/json`,...n.headers||{}},i=a();i&&(r.Authorization=`Bearer ${i}`);let o=await fetch(`${t}${e}`,{...n,headers:r}),c=await o.json().catch(()=>({}));if(o.status===401)throw s(),Error(c.error||`Sesión expirada. Vuelve a iniciar sesión.`);if(!o.ok)throw Error(c.error||`Error en la solicitud`);return c}function u(e){return`$${Number(e).toLocaleString(`es-CO`)}`}function d(e){return new Date(e).toLocaleString(`es-CO`)}function f(e){return String(e??``).replace(/[&<>"']/g,e=>({"&":`&amp;`,"<":`&lt;`,">":`&gt;`,'"':`&quot;`,"'":`&#39;`})[e])}async function p(e){e.preventDefault();let t=document.querySelector(`#login-usuario`).value.trim(),n=document.querySelector(`#login-password`).value,r=document.querySelector(`#login-resultado`);try{o((await l(`/auth/login`,{method:`POST`,body:JSON.stringify({usuario:t,password:n})})).token),window.location.reload()}catch(e){r.innerHTML=`<p class="error">${e.message}</p>`}}function m(){s(),window.location.reload()}async function h(){let e=document.querySelector(`#dashboard-stats`);if(e)try{let t=await l(`/reportes/dashboard`);e.innerHTML=`
       <article class="stat-card">
         <h3>Ventas hoy</h3>
         <p>${u(t.ventas_hoy)}</p>
@@ -19,7 +19,7 @@ import{t as e}from"./api-B-s7tTxe.js";var t=e(`/api`),n=`pizza_admin_token`,r=[]
         <h3>Agotadas</h3>
         <p>${t.pizzas_agotadas}</p>
       </article>
-    `}catch(t){e.innerHTML=`<p class="error">${t.message}</p>`}}async function h(){let e=document.querySelector(`#reporte-mensual`),t=Number(document.querySelector(`#reporte-anio`)?.value),n=Number(document.querySelector(`#reporte-mes`)?.value);if(e)try{let r=await l(`/reportes/mensual?anio=${t}&mes=${n}`);e.innerHTML=`
+    `}catch(t){e.innerHTML=`<p class="error">${t.message}</p>`}}async function g(){let e=document.querySelector(`#reporte-mensual`),t=Number(document.querySelector(`#reporte-anio`)?.value),n=Number(document.querySelector(`#reporte-mes`)?.value);if(e)try{let r=await l(`/reportes/mensual?anio=${t}&mes=${n}`);e.innerHTML=`
       <div class="reporte-grid">
         <article class="stat-card">
           <h3>Total vendido</h3>
@@ -46,7 +46,7 @@ import{t as e}from"./api-B-s7tTxe.js";var t=e(`/api`),n=`pizza_admin_token`,r=[]
           </p>
         </article>
       </div>
-    `}catch(t){e.innerHTML=`<p class="error">${t.message}</p>`}}async function g(){let e=document.querySelector(`#pedidos-lista`);if(e)try{if(i=await l(`/pedidos`),i.length===0){e.innerHTML=`<p>No hay pedidos registrados.</p>`;return}e.innerHTML=`
+    `}catch(t){e.innerHTML=`<p class="error">${t.message}</p>`}}async function _(){let e=document.querySelector(`#pedidos-lista`);if(e)try{if(i=await l(`/pedidos`),i.length===0){e.innerHTML=`<p>No hay pedidos registrados.</p>`;return}e.innerHTML=`
       <div class="tabla-wrap">
         <table class="tabla-pedidos">
           <thead>
@@ -68,7 +68,10 @@ import{t as e}from"./api-B-s7tTxe.js";var t=e(`/api`),n=`pizza_admin_token`,r=[]
                         ${e.estado}
                       </span>
                     </td>
-                    <td>${u(e.total)}</td>
+                    <td>
+                      ${u(e.total)}
+                      ${e.telefono_whatsapp?`<small>Subtotal de pizzas</small>`:``}
+                    </td>
                     <td>${e.codigo_confirmacion||`—`}</td>
                     <td>${d(e.created_at)}</td>
                     <td class="acciones-pedido">
@@ -95,25 +98,29 @@ import{t as e}from"./api-B-s7tTxe.js";var t=e(`/api`),n=`pizza_admin_token`,r=[]
       <div class="pedido-detalle-card">
         <h3>Pedido #${n.id}</h3>
         <p><strong>Estado:</strong> ${n.estado}</p>
-        <p><strong>Total:</strong> ${u(n.total)}</p>
+        <p><strong>${n.telefono_whatsapp?`Subtotal de pizzas`:`Total`}:</strong> ${u(n.total)}</p>
         <p><strong>Código:</strong> ${n.codigo_confirmacion||`—`}</p>
+        ${n.telefono_whatsapp?`<p><strong>WhatsApp:</strong> ${f(n.telefono_whatsapp)}</p>`:``}
+        ${n.metodo_pago?`<p><strong>Método de pago preferido:</strong> ${f(n.metodo_pago)}</p>`:``}
+        ${n.direccion?`<p><strong>Dirección / barrio:</strong> ${f(n.direccion)}</p>`:``}
+        ${n.notas?`<p><strong>Solicitudes:</strong> ${f(n.notas)}</p>`:``}
         <ul>
           ${n.detalles.map(e=>`
                 <li>
-                  ${e.pizza_nombre} × ${e.cantidad}
+                  ${f(e.pizza_nombre)} × ${e.cantidad}
                   — ${u(e.subtotal)}
                 </li>
               `).join(``)}
         </ul>
       </div>
-    `}catch(e){t.innerHTML=`<p class="error">${e.message}</p>`}},window.cancelarPedido=async function(e){if(confirm(`¿Cancelar el pedido #${e}?`))try{await l(`/pedidos/${e}/cancelar`,{method:`POST`}),await Promise.all([g(),m(),v()])}catch(e){alert(e.message)}};async function _(e){e.preventDefault();let t=document.querySelector(`#pedido-id`).value.trim(),n=document.querySelector(`#pedido-codigo`).value.trim(),r=document.querySelector(`#finalizar-resultado`),i=e.currentTarget.querySelector(`button[type="submit"]`);if(!t||!n){r.innerHTML=`<p class="error">El ID del pedido y el código son obligatorios.</p>`;return}try{i&&(i.disabled=!0);let e=await l(`/pedidos/${t}/finalizar`,{method:`POST`,body:JSON.stringify({codigo:n})});document.querySelector(`#finalizar-pedido-form`).reset(),r.innerHTML=`
+    `}catch(e){t.innerHTML=`<p class="error">${e.message}</p>`}},window.cancelarPedido=async function(e){if(confirm(`¿Cancelar el pedido #${e}?`))try{await l(`/pedidos/${e}/cancelar`,{method:`POST`}),await Promise.all([_(),h(),y()])}catch(e){alert(e.message)}};async function v(e){e.preventDefault();let t=document.querySelector(`#pedido-id`).value.trim(),n=document.querySelector(`#pedido-codigo`).value.trim(),r=document.querySelector(`#finalizar-resultado`),i=e.currentTarget.querySelector(`button[type="submit"]`);if(!t||!n){r.innerHTML=`<p class="error">El ID del pedido y el código son obligatorios.</p>`;return}try{i&&(i.disabled=!0);let e=await l(`/pedidos/${t}/finalizar`,{method:`POST`,body:JSON.stringify({codigo:n})});document.querySelector(`#finalizar-pedido-form`).reset(),r.innerHTML=`
       <div class="pedido-exito">
         <strong>Pedido #${e.pedido.id} finalizado</strong>
         <p>Estado: ${e.pedido.estado}</p>
       </div>
-    `,await Promise.all([g(),m()])}catch(e){r.innerHTML=`<p class="error">${e.message}</p>`}finally{i&&(i.disabled=!1)}}async function v(){try{r=await l(`/pizzas/admin`),y()}catch(e){if(console.error(e),String(e.message).includes(`Sesión`)){window.location.reload();return}document.querySelector(`#admin-pizzas`).innerHTML=`
+    `,await Promise.all([_(),h()])}catch(e){r.innerHTML=`<p class="error">${e.message}</p>`}finally{i&&(i.disabled=!1)}}async function y(){try{r=await l(`/pizzas/admin`),b()}catch(e){if(console.error(e),String(e.message).includes(`Sesión`)){window.location.reload();return}document.querySelector(`#admin-pizzas`).innerHTML=`
       <p class="error">${e.message}</p>
-    `}}function y(){let e=document.querySelector(`#admin-pizzas`);if(e){if(r.length===0){e.innerHTML=`<p>No hay pizzas registradas.</p>`;return}e.innerHTML=r.map(e=>`
+    `}}function b(){let e=document.querySelector(`#admin-pizzas`);if(e){if(r.length===0){e.innerHTML=`<p>No hay pizzas registradas.</p>`;return}e.innerHTML=r.map(e=>`
         <article class="pizza-card ${e.activo?``:`desactivada`}">
           <div class="pizza-image">
             ${e.imagen_url?`<img src="${e.imagen_url}" alt="${e.nombre}" />`:`<div class="pizza-placeholder">Sin imagen</div>`}
@@ -134,7 +141,7 @@ import{t as e}from"./api-B-s7tTxe.js";var t=e(`/api`),n=`pizza_admin_token`,r=[]
             </div>
           </div>
         </article>
-      `).join(``)}}window.editarPizza=function(e){let t=r.find(t=>t.id===e);t&&(document.querySelector(`#pizza-id`).value=t.id,document.querySelector(`#nombre`).value=t.nombre,document.querySelector(`#descripcion`).value=t.descripcion,document.querySelector(`#precio`).value=t.precio,document.querySelector(`#stock`).value=t.stock,document.querySelector(`#imagen_url`).value=t.imagen_url||``,document.querySelector(`#activo`).checked=t.activo,document.querySelector(`#form-title`).textContent=`Editar pizza`,document.querySelector(`#pizza-form`)?.scrollIntoView({behavior:`smooth`}))},window.desactivarPizza=async function(e){if(confirm(`¿Seguro que quieres desactivar esta pizza?`))try{await l(`/pizzas/${e}`,{method:`DELETE`}),await v()}catch(e){alert(e.message)}},window.activarPizza=async function(e){try{await l(`/pizzas/${e}/activar`,{method:`PATCH`}),await v()}catch(e){alert(e.message)}};async function b(e){e.preventDefault();let t=document.querySelector(`#pizza-id`).value,n={nombre:document.querySelector(`#nombre`).value,descripcion:document.querySelector(`#descripcion`).value,precio:Number(document.querySelector(`#precio`).value),stock:Number(document.querySelector(`#stock`).value),imagen_url:document.querySelector(`#imagen_url`).value,activo:document.querySelector(`#activo`).checked};try{t?await l(`/pizzas/${t}`,{method:`PUT`,body:JSON.stringify(n)}):await l(`/pizzas`,{method:`POST`,body:JSON.stringify(n)}),x(),await Promise.all([v(),m()]),alert(t?`Pizza actualizada correctamente`:`Pizza creada correctamente`)}catch(e){alert(e.message)}}function x(){document.querySelector(`#pizza-form`).reset(),document.querySelector(`#pizza-id`).value=``,document.querySelector(`#activo`).checked=!0,document.querySelector(`#form-title`).textContent=`Nueva pizza`}window.limpiarFormulario=x;async function S(){await Promise.all([m(),g(),v(),h()])}var C=new Date;c()?(document.querySelector(`#app`).innerHTML=`
+      `).join(``)}}window.editarPizza=function(e){let t=r.find(t=>t.id===e);t&&(document.querySelector(`#pizza-id`).value=t.id,document.querySelector(`#nombre`).value=t.nombre,document.querySelector(`#descripcion`).value=t.descripcion,document.querySelector(`#precio`).value=t.precio,document.querySelector(`#stock`).value=t.stock,document.querySelector(`#imagen_url`).value=t.imagen_url||``,document.querySelector(`#activo`).checked=t.activo,document.querySelector(`#form-title`).textContent=`Editar pizza`,document.querySelector(`#pizza-form`)?.scrollIntoView({behavior:`smooth`}))},window.desactivarPizza=async function(e){if(confirm(`¿Seguro que quieres desactivar esta pizza?`))try{await l(`/pizzas/${e}`,{method:`DELETE`}),await y()}catch(e){alert(e.message)}},window.activarPizza=async function(e){try{await l(`/pizzas/${e}/activar`,{method:`PATCH`}),await y()}catch(e){alert(e.message)}};async function x(e){e.preventDefault();let t=document.querySelector(`#pizza-id`).value,n={nombre:document.querySelector(`#nombre`).value,descripcion:document.querySelector(`#descripcion`).value,precio:Number(document.querySelector(`#precio`).value),stock:Number(document.querySelector(`#stock`).value),imagen_url:document.querySelector(`#imagen_url`).value,activo:document.querySelector(`#activo`).checked};try{t?await l(`/pizzas/${t}`,{method:`PUT`,body:JSON.stringify(n)}):await l(`/pizzas`,{method:`POST`,body:JSON.stringify(n)}),S(),await Promise.all([y(),h()]),alert(t?`Pizza actualizada correctamente`:`Pizza creada correctamente`)}catch(e){alert(e.message)}}function S(){document.querySelector(`#pizza-form`).reset(),document.querySelector(`#pizza-id`).value=``,document.querySelector(`#activo`).checked=!0,document.querySelector(`#form-title`).textContent=`Nueva pizza`}window.limpiarFormulario=S;async function C(){await Promise.all([h(),_(),y(),g()])}var w=new Date;c()?(document.querySelector(`#app`).innerHTML=`
     <main class="admin">
       <header class="admin-header">
         <div>
@@ -160,11 +167,11 @@ import{t as e}from"./api-B-s7tTxe.js";var t=e(`/api`),n=`pizza_admin_token`,r=[]
           <div class="reporte-filtros">
             <label>
               Año
-              <input id="reporte-anio" type="number" value="${C.getFullYear()}" />
+              <input id="reporte-anio" type="number" value="${w.getFullYear()}" />
             </label>
             <label>
               Mes
-              <input id="reporte-mes" type="number" min="1" max="12" value="${C.getMonth()+1}" />
+              <input id="reporte-mes" type="number" min="1" max="12" value="${w.getMonth()+1}" />
             </label>
             <button type="button" id="btn-cargar-reporte">
               Actualizar reporte
@@ -251,7 +258,7 @@ import{t as e}from"./api-B-s7tTxe.js";var t=e(`/api`),n=`pizza_admin_token`,r=[]
 
       </section>
     </main>
-  `,document.querySelector(`#btn-logout`).addEventListener(`click`,p),document.querySelector(`#finalizar-pedido-form`).addEventListener(`submit`,_),document.querySelector(`#pizza-form`).addEventListener(`submit`,b),document.querySelector(`#btn-limpiar`).addEventListener(`click`,x),document.querySelector(`#btn-cargar-reporte`).addEventListener(`click`,h),S()):(document.querySelector(`#app`).innerHTML=`
+  `,document.querySelector(`#btn-logout`).addEventListener(`click`,m),document.querySelector(`#finalizar-pedido-form`).addEventListener(`submit`,v),document.querySelector(`#pizza-form`).addEventListener(`submit`,x),document.querySelector(`#btn-limpiar`).addEventListener(`click`,S),document.querySelector(`#btn-cargar-reporte`).addEventListener(`click`,g),C()):(document.querySelector(`#app`).innerHTML=`
     <main class="login-page">
       <form id="login-form" class="login-card">
         <h1>🍕 Pizza Negocio</h1>
@@ -271,4 +278,4 @@ import{t as e}from"./api-B-s7tTxe.js";var t=e(`/api`),n=`pizza_admin_token`,r=[]
         <div id="login-resultado"></div>
       </form>
     </main>
-  `,document.querySelector(`#login-form`).addEventListener(`submit`,f));
+  `,document.querySelector(`#login-form`).addEventListener(`submit`,p));

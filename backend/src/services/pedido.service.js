@@ -21,7 +21,20 @@ const crearPedido = async (datosPedido) => {
     pizza.cantidad = cantidad;
   }
 
-  return await pedidoModel.crearPedido(datosPedido);
+  return await pedidoModel.crearPedido({
+    ...datosPedido,
+    incluir_detalles: datosPedido.incluir_detalles === true,
+    telefono_whatsapp: datosPedido.telefono_whatsapp
+      ? String(datosPedido.telefono_whatsapp).trim()
+      : null,
+    metodo_pago: datosPedido.metodo_pago
+      ? String(datosPedido.metodo_pago).trim()
+      : null,
+    direccion: datosPedido.direccion
+      ? String(datosPedido.direccion).trim()
+      : null,
+    notas: datosPedido.notas ? String(datosPedido.notas).trim() : null,
+  });
 };
 
 const confirmarPago = async (pedidoId) => {

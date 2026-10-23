@@ -1,7 +1,48 @@
 const crypto = require("node:crypto");
 const pool = require("../config/database");
 const pizzaModel = require("../models/pizza.model");
-const { prepararMenuParaIA, respuestaAutomatica } = require("./whatsapp-bot");
+const pedidoService = require("./pedido.service");
+const {
+  prepararMenuParaIA,
+  respuestaAutomatica,
+  procesarConversacion,
+} = require("./whatsapp-bot");
+
+const bloqueosConversacion = new Map();
+
+const ejecutarConversacionEnOrden = async (clave, operacion) => {
+  const anterior = bloqueosConversacion.get(clave) || Promise.resolve();
+  let liberar;
+  const turno = new Promise((resolve) => {
+    liberar = resolve;
+  });
+  const cola = anterior.then(() => turno);
+  bloqueosConversacion.set(clave, cola);
+
+  await anterior;
+  try {
+    return await operacion();
+  } finally {
+    liberar();
+    if (bloqueosConversacion.get(clave) === cola) {
+      bloqueosConversacion.delete(clave);
+    }
+  }
+};
+
+const limpiarConversacionesExpiradas = async () => {
+  await pool.query(
+    `DELETE FROM whatsapp_conversaciones
+     WHERE updated_at <= CURRENT_TIMESTAMP - INTERVAL '24 hours'`
+  );
+};
+
+const intervaloLimpiezaConversaciones = setInterval(() => {
+  limpiarConversacionesExpiradas().catch((error) => {
+    console.error("No se pudieron eliminar borradores de WhatsApp expirados:", error);
+  });
+}, 60 * 60 * 1000);
+intervaloLimpiezaConversaciones.unref();
 
 const validarFirmaWebhook = (rawBody, signature, appSecret) => {
   if (!Buffer.isBuffer(rawBody) || !signature || !appSecret) return false;
@@ -51,7 +92,7 @@ const generarRespuestaIA = async (mensaje, pizzas) => {
       systemInstruction: {
         parts: [
           {
-            text: "Eres el asistente de WhatsApp de la pizzería El Callejón en Colombia. Responde en español, breve, amable y natural. Usa solo el menú JSON proporcionado. Nunca inventes precios, ingredientes, horarios, domicilios ni disponibilidad. Si no conoces un dato, indica que el equipo lo confirmará. No afirmes que registraste o confirmaste un pedido o pago. Para productos no disponibles, ofrece solo alternativas marcadas como disponibles.",
+            text: "Eres el asistente de WhatsApp de la pizzería El Callejón en Colombia. Responde en español, breve, amable y natural. Usa solo el menú JSON proporcionado. Se aceptan efectivo, transferencia y Nequi. La cobertura y tarifa del domicilio, y el precio o disponibilidad de salsa adicional, están pendientes de confirmación del equipo. Instagram: https://www.instagram.com/elcallejon_n4496?psln=MXVsbGRteXI3MW51Mg==. Facebook: https://www.facebook.com/profile.php?id=61595493282153. Nunca inventes precios, ingredientes, horarios, domicilios ni disponibilidad. Si no conoces un dato, indica que el equipo lo confirmará. No afirmes que registraste o confirmaste un pedido o pago. Para productos no disponibles, ofrece solo alternativas marcadas como disponibles.",
           },
         ],
       },
@@ -93,15 +134,105 @@ const generarRespuestaIA = async (mensaje, pizzas) => {
   return answer;
 };
 
-const responderMensaje = async (mensaje) => {
-  const pizzas = await pizzaModel.obtenerTodas();
-  const respuestaDeterminista = respuestaAutomatica(mensaje, pizzas);
-  if (respuestaDeterminista) return respuestaDeterminista;
+const obtenerPedidoWhatsapp = async (telefono) => {
+  await pool.query(
+    `DELETE FROM whatsapp_conversaciones
+     WHERE telefono = $1
+       AND updated_at <= CURRENT_TIMESTAMP - INTERVAL '24 hours'`,
+    [telefono]
+  );
+  const result = await pool.query(
+    `SELECT pedido
+     FROM whatsapp_conversaciones
+     WHERE telefono = $1
+       AND updated_at > CURRENT_TIMESTAMP - INTERVAL '24 hours'`,
+    [telefono]
+  );
 
-  const respuestaIA = await generarRespuestaIA(mensaje, pizzas);
-  if (respuestaIA) return respuestaIA;
+  return result.rows[0]?.pedido || null;
+};
 
-  return "Puedo ayudarte con el menú y la disponibilidad. Dime qué pizza te interesa o escribe “menú” para ver las opciones.";
+const guardarPedidoWhatsapp = async (telefono, pedido) => {
+  await pool.query(
+    `INSERT INTO whatsapp_conversaciones (telefono, pedido, updated_at)
+     VALUES ($1, $2::jsonb, CURRENT_TIMESTAMP)
+     ON CONFLICT (telefono) DO UPDATE
+       SET pedido = EXCLUDED.pedido, updated_at = CURRENT_TIMESTAMP`,
+    [telefono, JSON.stringify(pedido)]
+  );
+};
+
+const eliminarPedidoWhatsapp = async (telefono) => {
+  await pool.query("DELETE FROM whatsapp_conversaciones WHERE telefono = $1", [
+    telefono,
+  ]);
+};
+
+const crearRespuestaPedidoGuardado = (pedidoCreado) => {
+  const detalle = pedidoCreado.detalles
+    .map(
+      (item) =>
+        `• ${item.cantidad} × ${item.pizza_nombre}: $${Number(
+          item.subtotal
+        ).toLocaleString("es-CO")}`
+    )
+    .join("\n");
+  const metodo = pedidoCreado.metodo_pago
+    ? `\nMétodo de pago preferido: ${pedidoCreado.metodo_pago}.`
+    : "";
+  const solicitudes = pedidoCreado.notas
+    ? `\nSolicitudes: ${pedidoCreado.notas}.`
+    : "";
+
+  return `✅ Registré tu pedido #${pedidoCreado.id} en el sistema como pendiente de pago.\n\n🧾 Resumen:\n${detalle}\n\nSubtotal de pizzas: $${Number(
+    pedidoCreado.total
+  ).toLocaleString(
+    "es-CO"
+  )}${metodo}${solicitudes}\n\nEl costo del domicilio y de cualquier salsa adicional está pendiente de confirmación; por eso el total final puede cambiar. El equipo te confirmará el total y los datos de pago.\n\n📲 Más información:\nInstagram: https://www.instagram.com/elcallejon_n4496?psln=MXVsbGRteXI3MW51Mg==\nFacebook: https://www.facebook.com/profile.php?id=61595493282153`;
+};
+
+const responderMensaje = async (mensaje, destinatario) => {
+  return ejecutarConversacionEnOrden(destinatario, async () => {
+    const pizzas = await pizzaModel.obtenerTodas();
+    const pedidoGuardado = await obtenerPedidoWhatsapp(destinatario);
+    const conversacion = procesarConversacion(mensaje, pizzas, pedidoGuardado);
+
+    if (conversacion.accion === "cancelar") {
+      await eliminarPedidoWhatsapp(destinatario);
+      return conversacion.respuesta;
+    }
+
+    if (conversacion.accion === "guardar") {
+      await guardarPedidoWhatsapp(destinatario, conversacion.pedido);
+      return conversacion.respuesta;
+    }
+
+    if (conversacion.accion === "confirmar") {
+      let pedidoCreado;
+      try {
+        pedidoCreado = await pedidoService.crearPedido({
+          ...conversacion.datosPedido,
+          telefono_whatsapp: destinatario,
+          incluir_detalles: true,
+        });
+      } catch (error) {
+        console.error("Error al registrar pedido recibido por WhatsApp:", error);
+        await guardarPedidoWhatsapp(destinatario, conversacion.pedido);
+        return `No pude registrar el pedido todavía: ${error.message}. Conservé el borrador; revisemos la disponibilidad y vuelve a escribir “confirmar pedido”.`;
+      }
+      await eliminarPedidoWhatsapp(destinatario);
+      return crearRespuestaPedidoGuardado(pedidoCreado);
+    }
+
+    const respuestaDeterminista =
+      conversacion.respuesta || respuestaAutomatica(mensaje, pizzas);
+    if (respuestaDeterminista) return respuestaDeterminista;
+
+    const respuestaIA = await generarRespuestaIA(mensaje, pizzas);
+    if (respuestaIA) return respuestaIA;
+
+    return "Puedo ayudarte con el menú, pedidos, pagos, domicilio y salsa adicional. Escribe “menú” para ver las opciones.";
+  });
 };
 
 const enviarMensaje = async (destinatario, texto) => {
@@ -185,7 +316,7 @@ const procesarMensaje = async (message) => {
   try {
     const texto = obtenerTextoMensaje(message);
     const respuesta = texto
-      ? await responderMensaje(texto)
+      ? await responderMensaje(texto, destinatario)
       : "Por ahora puedo leer mensajes de texto. Escribe “menú” para consultar pizzas y disponibilidad.";
 
     await enviarMensaje(destinatario, respuesta);

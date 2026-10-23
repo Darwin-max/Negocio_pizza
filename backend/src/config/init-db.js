@@ -30,9 +30,21 @@ async function initDb() {
         pago_confirmado BOOLEAN NOT NULL DEFAULT FALSE,
         codigo_confirmacion VARCHAR(20) UNIQUE,
         codigo_usado BOOLEAN NOT NULL DEFAULT FALSE,
+        telefono_whatsapp TEXT,
+        metodo_pago TEXT,
+        direccion TEXT,
+        notas TEXT,
         created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
       );
+    `);
+
+    await client.query(`
+      ALTER TABLE pedidos
+      ADD COLUMN IF NOT EXISTS telefono_whatsapp TEXT,
+      ADD COLUMN IF NOT EXISTS metodo_pago TEXT,
+      ADD COLUMN IF NOT EXISTS direccion TEXT,
+      ADD COLUMN IF NOT EXISTS notas TEXT;
     `);
 
     await client.query(`
@@ -66,6 +78,19 @@ async function initDb() {
         estado VARCHAR(20) NOT NULL,
         updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
       );
+    `);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS whatsapp_conversaciones (
+        telefono TEXT PRIMARY KEY,
+        pedido JSONB NOT NULL,
+        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    await client.query(`
+      DELETE FROM whatsapp_conversaciones
+      WHERE updated_at <= CURRENT_TIMESTAMP - INTERVAL '24 hours';
     `);
 
     // Admin por defecto: usuario=admin, password=admin123
