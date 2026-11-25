@@ -5,11 +5,11 @@ Sistema de inventario, pedidos y administración para una pizzería.
 ## Qué incluye
 
 - Catálogo de productos por categoría (pizzas, hamburguesas, bebidas, granizados y otras), con filtros de disponibilidad
-- Carrito, creación de pedido, confirmación de pago y código de entrega
+- Carrito que registra el pedido en el backend y abre WhatsApp con el resumen
 - Panel admin con login JWT: dashboard, pedidos, reportes, CRUD de productos y finalización por código
 - PostgreSQL + Docker
-- Descuento de stock al confirmar pago (transacciones + `FOR UPDATE`)
-- Cancelación de pedidos (restaura stock si ya estaba pagado)
+- Reserva y descuento de stock al registrar el pedido (transacciones + `FOR UPDATE`)
+- Cancelación de pedidos (devuelve el stock reservado al inventario)
 
 ## Tecnologías
 
@@ -72,7 +72,9 @@ El webhook del bot está en `backend/src/routes/whatsapp.routes.js`. Sus mensaje
 
 Para preguntas generales puede usar Gemini si `GEMINI_API_KEY` está configurada. En ese caso, el texto entrante del cliente y el menú se envían a la API de Gemini; sin esa variable, no se envían mensajes a un proveedor de IA externo.
 
-En el panel de administración, cada producto tiene una categoría editable (por ejemplo, `Hamburguesas`, `Bebidas`, `Granizados` o `Combos`); las categorías se crean al escribirlas y guardar el producto. Los productos de categoría `Combos` aparecen en una sección destacada independiente, con nombre, descripción, precio fijo, disponibilidad e imagen opcional; también se agregan al carrito como cualquier producto. Las demás categorías aparecen automáticamente como filtros del menú. También se puede buscar por nombre o ingredientes, filtrar por disponibilidad y ordenar por precio o nombre. El cliente arma el pedido en el carrito y el botón **Enviar pedido por WhatsApp** abre un mensaje con el detalle y el total; no se confirma ni se cobra desde la página.
+En el panel de administración, cada producto tiene una categoría editable (por ejemplo, `Hamburguesas`, `Bebidas`, `Granizados` o `Combos`); las categorías se crean al escribirlas y guardar el producto. Los productos de categoría `Combos` aparecen en una sección destacada independiente, con nombre, descripción, precio fijo, disponibilidad e imagen opcional; también se agregan al carrito como cualquier producto. Las demás categorías aparecen automáticamente como filtros del menú. También se puede buscar por nombre o ingredientes, filtrar por disponibilidad y ordenar por precio o nombre.
+
+El cliente arma el pedido en el carrito y pulsa **Registrar pedido y enviar**: la web crea el pedido en el panel, reserva el stock y luego abre WhatsApp con el número de pedido y el detalle. El campo de WhatsApp es opcional. Si el backend no responde, queda disponible **Enviar solo por WhatsApp**, que no registra el pedido ni reserva stock. Los pedidos registrados quedan en `PENDIENTE_PAGO`; el pago se registra desde el panel y el stock solo se devuelve si el admin cancela el pedido antes de finalizarlo.
 
 ## Arranque con Docker
 
@@ -86,16 +88,16 @@ Los scripts de `database/` se cargan automáticamente la primera vez que se crea
 
 La página pública se genera en la carpeta `docs/` (HTML, CSS y JS estáticos).
 
-1. En el repositorio: **Settings → Pages**
-2. Source: **GitHub Actions** (recomendado) o **Deploy from a branch** → folder **/docs**
-3. Si usas la carpeta `/docs`, primero corre `npm run build` y sube esos archivos
+1. En el repositorio: **Settings → Secrets and variables → Actions → Variables** y crea `VITE_API_URL` con la URL pública del backend, por ejemplo `https://pizza-negocio-api.onrender.com` (sin `/` al final).
+2. En **Settings → Pages**, elige Source: **GitHub Actions** (recomendado) o **Deploy from a branch** → folder **/docs**.
+3. Si usas la carpeta `/docs`, primero corre el build con la variable y sube esos archivos:
 
 ```bash
-npm install --prefix frontend
-npm run build
+cd frontend
+VITE_API_URL=https://tu-api.onrender.com npm run build
 ```
 
-Sube el repo incluyendo `docs/`. Para GitHub Pages configura `VITE_API_URL` con la URL pública del backend antes de generar el sitio. El menú estático `menu.json` solo sirve como datos de ejemplo si no hay servidor.
+Sube el repo incluyendo `docs/`. Sin `VITE_API_URL`, el sitio público puede abrir WhatsApp, pero no podrá registrar pedidos ni reservar stock en el panel. El menú estático `menu.json` solo sirve como datos de ejemplo si no hay servidor.
 
 Para fotos de las pizzas, pon la URL en `frontend/public/menu.json` (`imagen_url`) y vuelve a ejecutar `npm run build`.
 
@@ -140,11 +142,13 @@ npm run dev
 ## Flujo de pedidos
 
 ```
-Cliente crea pedido → PENDIENTE_PAGO
-Cliente confirma pago → PAGO_CONFIRMADO + código + descuento de stock
-Admin finaliza con código → FINALIZADO
-Admin puede cancelar (antes de finalizar) → CANCELADO
+Cliente registra pedido en la web o por WhatsApp → PENDIENTE_PAGO + stock reservado
+Admin registra el pago → PAGO_CONFIRMADO + código de entrega (el stock ya estaba reservado)
+Admin finaliza con el código → FINALIZADO
+Admin cancela antes de finalizar → CANCELADO + stock devuelto
 ```
+
+Si un pedido queda sin pagar, el admin debe cancelarlo para liberar el stock reservado.
 
 ## Endpoints principales
 
@@ -153,7 +157,6 @@ Admin puede cancelar (antes de finalizar) → CANCELADO
 - `GET /api/pizzas`
 - `GET|POST /api/whatsapp/webhook` (verificación y eventos firmados de Meta)
 - `POST /api/pedidos`
-- `POST /api/pedidos/:id/confirmar-pago`
 - `POST /api/auth/login`
 
 ### Admin (Bearer token)
@@ -162,6 +165,7 @@ Admin puede cancelar (antes de finalizar) → CANCELADO
 - `POST|PUT|DELETE|PATCH /api/pizzas...`
 - `GET /api/pedidos`
 - `GET /api/pedidos/:id`
+- `POST /api/pedidos/:id/confirmar-pago`
 - `POST /api/pedidos/:id/finalizar`
 - `POST /api/pedidos/:id/cancelar`
 - `GET /api/reportes/dashboard`

@@ -2,6 +2,7 @@ import { apiUrl } from "../config/api.js";
 import { whatsappUrl } from "../config/whatsapp.js";
 
 const API_PIZZAS = apiUrl("/api/pizzas");
+const API_PEDIDOS = apiUrl("/api/pedidos");
 
 const carrito = [];
 let pizzasCatalogo = [];
@@ -9,6 +10,9 @@ let categoriaSeleccionada = "todo";
 let busquedaMenu = "";
 let soloDisponibles = false;
 let ordenMenu = "featured";
+let pedidoRegistrado = null;
+let enviandoPedido = false;
+let mensajeCarrito = "";
 
 function escapeHtml(valor) {
   return String(valor)
@@ -87,10 +91,49 @@ function totalCarrito() {
   );
 }
 
+function firmaCarrito() {
+  return JSON.stringify(
+    [...carrito]
+      .sort((a, b) => a.pizza_id - b.pizza_id)
+      .map((item) => [item.pizza_id, item.cantidad])
+  );
+}
+
+function mensajePedidoWhatsapp(numeroPedido) {
+  const detalle = carrito
+    .map(
+      (item) =>
+        `- ${item.cantidad} x ${item.nombre}: ${formatearPrecio(
+          Number(item.precio) * item.cantidad
+        )}`
+    )
+    .join("\n");
+
+  const encabezado = numeroPedido
+    ? `Hola, El Callejón. Registré el pedido #${numeroPedido} en la web.`
+    : "Hola, El Callejón. Quiero hacer este pedido:";
+
+  return `${encabezado}\n\n${detalle}\n\nTotal: ${formatearPrecio(totalCarrito())}`;
+}
+
 function actualizarResumenCarrito() {
   const contador = document.querySelector("#carrito-count");
   const total = document.querySelector("#carrito-total");
   const whatsappPedido = document.querySelector("#btn-whatsapp-pedido");
+  const registrar = document.querySelector("#btn-registrar-pedido");
+  const estado = document.querySelector("#carrito-estado");
+  const firmaActual = firmaCarrito();
+
+  if (pedidoRegistrado && pedidoRegistrado.firma !== firmaActual) {
+    const pedidoAnterior = pedidoRegistrado.id;
+    pedidoRegistrado = null;
+    mensajeCarrito = `El carrito cambió. Si registras de nuevo se creará otro pedido; el pedido #${pedidoAnterior} seguirá pendiente hasta que lo cancelen en el panel.`;
+  }
+
+  if (carrito.length === 0) {
+    pedidoRegistrado = null;
+    mensajeCarrito = "";
+  }
 
   if (contador) {
     contador.textContent = String(totalItemsCarrito());
@@ -101,20 +144,79 @@ function actualizarResumenCarrito() {
   }
 
   if (whatsappPedido && carrito.length > 0) {
-    const detalle = carrito
-      .map(
-        (item) =>
-          `- ${item.cantidad} x ${item.nombre}: ${formatearPrecio(
-            Number(item.precio) * item.cantidad
-          )}`
-      )
-      .join("\n");
+    const numero = pedidoRegistrado?.id || null;
+    whatsappPedido.href = whatsappUrl(mensajePedidoWhatsapp(numero));
+    whatsappPedido.textContent = numero
+      ? `Enviar pedido #${numero} solo por WhatsApp`
+      : "Enviar solo por WhatsApp";
+  }
 
-    whatsappPedido.href = whatsappUrl(
-      `Hola, El Callejón. Quiero hacer este pedido:\n\n${detalle}\n\nTotal: ${formatearPrecio(
-        totalCarrito()
-      )}`
-    );
+  if (registrar) {
+    registrar.disabled = enviandoPedido || carrito.length === 0;
+    registrar.textContent = enviandoPedido
+      ? "Registrando pedido..."
+      : "Registrar pedido y enviar";
+  }
+
+  if (estado) {
+    estado.textContent = mensajeCarrito;
+  }
+}
+
+async function registrarPedidoYEnviar() {
+  if (carrito.length === 0 || enviandoPedido) return;
+
+  const firma = firmaCarrito();
+
+  if (pedidoRegistrado?.firma === firma) {
+    mensajeCarrito = `El pedido #${pedidoRegistrado.id} ya está registrado. Abriendo WhatsApp...`;
+    actualizarResumenCarrito();
+    window.location.assign(whatsappUrl(mensajePedidoWhatsapp(pedidoRegistrado.id)));
+    return;
+  }
+
+  enviandoPedido = true;
+  mensajeCarrito = "Registrando tu pedido en el panel...";
+  actualizarResumenCarrito();
+
+  try {
+    const telefono =
+      document.querySelector("#cliente-telefono")?.value.trim() || null;
+
+    const response = await fetch(API_PEDIDOS, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        pizzas: carrito.map((item) => ({
+          pizza_id: item.pizza_id,
+          cantidad: item.cantidad,
+        })),
+        telefono_whatsapp: telefono,
+        notas: "Pedido creado desde el catálogo web",
+      }),
+    });
+
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error(data.error || "No se pudo registrar el pedido");
+    }
+
+    const pedido = data.pedido || data;
+
+    if (!pedido?.id) {
+      throw new Error("El servidor no devolvió el número de pedido");
+    }
+
+    pedidoRegistrado = { id: pedido.id, firma };
+    mensajeCarrito = `Pedido #${pedido.id} registrado. Abriendo WhatsApp...`;
+    actualizarResumenCarrito();
+    window.location.assign(whatsappUrl(mensajePedidoWhatsapp(pedido.id)));
+  } catch (error) {
+    mensajeCarrito = `${error.message}. Puedes usar “Enviar solo por WhatsApp”; en ese caso no quedará registrado en el panel.`;
+  } finally {
+    enviandoPedido = false;
+    actualizarResumenCarrito();
   }
 }
 
@@ -259,6 +361,9 @@ export function inicializarCarrito() {
   document.querySelector("#btn-cerrar-carrito")?.addEventListener("click", cerrarCarrito);
   document.querySelector("#carrito-fondo")?.addEventListener("click", cerrarCarrito);
   document.querySelector("#social-panel-close")?.addEventListener("click", cerrarRedes);
+  document
+    .querySelector("#btn-registrar-pedido")
+    ?.addEventListener("click", registrarPedidoYEnviar);
 
   document.querySelector("#carrito-lista")?.addEventListener("click", (event) => {
     const boton = event.target.closest("button[data-action]");

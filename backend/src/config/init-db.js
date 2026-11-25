@@ -34,6 +34,7 @@ async function initDb() {
         estado VARCHAR(30) NOT NULL DEFAULT 'PENDIENTE_PAGO',
         total NUMERIC(12, 2) NOT NULL DEFAULT 0,
         pago_confirmado BOOLEAN NOT NULL DEFAULT FALSE,
+        stock_descontado BOOLEAN NOT NULL DEFAULT FALSE,
         codigo_confirmacion VARCHAR(20) UNIQUE,
         codigo_usado BOOLEAN NOT NULL DEFAULT FALSE,
         telefono_whatsapp TEXT,
@@ -50,7 +51,25 @@ async function initDb() {
       ADD COLUMN IF NOT EXISTS telefono_whatsapp TEXT,
       ADD COLUMN IF NOT EXISTS metodo_pago TEXT,
       ADD COLUMN IF NOT EXISTS direccion TEXT,
-      ADD COLUMN IF NOT EXISTS notas TEXT;
+      ADD COLUMN IF NOT EXISTS notas TEXT,
+      ADD COLUMN IF NOT EXISTS stock_descontado BOOLEAN NOT NULL DEFAULT FALSE;
+    `);
+
+    // Los pedidos pagados antes de existir stock_descontado ya descontaron stock.
+    await client.query(`
+      UPDATE pedidos
+      SET stock_descontado = TRUE
+      WHERE pago_confirmado = TRUE
+        AND estado <> 'CANCELADO'
+        AND stock_descontado = FALSE;
+    `);
+
+    // Unifica el estado antiguo PAGADO con el estado actual PAGO_CONFIRMADO.
+    await client.query(`
+      UPDATE pedidos
+      SET estado = 'PAGO_CONFIRMADO'
+      WHERE estado = 'PAGADO'
+        AND pago_confirmado = TRUE;
     `);
 
     await client.query(`

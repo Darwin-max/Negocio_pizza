@@ -18,9 +18,9 @@
       content="Menú interactivo en 3D, combos, búsqueda de productos y pedidos sencillos por WhatsApp."
     />
     <meta property="og:locale" content="es_CO" />
-    <script type="module" crossorigin src="./assets/main-DoDzYITe.js"></script>
+    <script type="module" crossorigin src="./assets/main-Bi_MGne9.js"></script>
     <link rel="modulepreload" crossorigin href="./assets/api-B-s7tTxe.js">
-    <link rel="stylesheet" crossorigin href="./assets/main-H7wr38zj.css">
+    <link rel="stylesheet" crossorigin href="./assets/main-DJCzFp_m.css">
   </head>
   <body>
     <div class="site">
@@ -155,12 +155,27 @@
       <p id="carrito-vacio" class="carrito-vacio">Aún no has agregado productos.</p>
       <div id="carrito-lista" class="carrito-lista"></div>
       <div id="carrito-acciones" class="carrito-acciones" hidden>
+        <label class="carrito-campo" for="cliente-telefono">
+          <span>Tu WhatsApp (opcional)</span>
+          <input
+            id="cliente-telefono"
+            type="tel"
+            inputmode="tel"
+            autocomplete="tel"
+            maxlength="20"
+            placeholder="Ej: 312 345 6789"
+          />
+        </label>
         <div class="carrito-total">
           <span>Total</span>
           <strong id="carrito-total">$0</strong>
         </div>
-        <a id="btn-whatsapp-pedido" class="btn btn-whatsapp btn-block" href="https://wa.me/573122759195" target="_blank" rel="noopener noreferrer">
-          Enviar pedido por WhatsApp
+        <button type="button" id="btn-registrar-pedido" class="btn btn-primary btn-block">
+          Registrar pedido y enviar
+        </button>
+        <p id="carrito-estado" class="carrito-estado" role="status" aria-live="polite"></p>
+        <a id="btn-whatsapp-pedido" class="btn btn-whatsapp btn-block carrito-whatsapp-fallback" href="https://wa.me/573122759195" target="_blank" rel="noopener noreferrer">
+          Enviar solo por WhatsApp
         </a>
       </div>
     </aside>

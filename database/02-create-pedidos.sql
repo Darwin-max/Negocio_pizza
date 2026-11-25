@@ -7,6 +7,8 @@ CREATE TABLE IF NOT EXISTS pedidos (
 
     pago_confirmado BOOLEAN NOT NULL DEFAULT FALSE,
 
+    stock_descontado BOOLEAN NOT NULL DEFAULT FALSE,
+
     codigo_confirmacion VARCHAR(20) UNIQUE,
 
     codigo_usado BOOLEAN NOT NULL DEFAULT FALSE,

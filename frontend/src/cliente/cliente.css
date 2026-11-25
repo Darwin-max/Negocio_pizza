@@ -578,7 +578,43 @@
   padding-bottom: env(safe-area-inset-bottom, 0);
 }
 .btn-confirmar { padding: 14px; width: 100%; }
-.btn-confirmar:disabled { opacity: 0.6; cursor: not-allowed; }
+.btn-confirmar:disabled,
+.btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.carrito-campo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+.carrito-campo input {
+  width: 100%;
+  padding: 11px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  font: inherit;
+}
+.carrito-campo input:focus {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 1px;
+}
+.carrito-estado {
+  margin: 0;
+  min-height: 1.2em;
+  font-size: 0.86rem;
+  line-height: 1.4;
+  color: var(--color-text-muted);
+  word-break: break-word;
+}
+.carrito-estado:empty { display: none; }
+.carrito-whatsapp-fallback {
+  background: transparent;
+  color: var(--color-primary);
+  border: 1px solid var(--color-border);
+  font-size: 0.9rem;
+}
+.carrito-whatsapp-fallback:hover { background: #f4f4f5; }
 
 .pedido-exito {
   padding: 16px;
