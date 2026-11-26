@@ -103,6 +103,13 @@ if (!estaAutenticado()) {
             <span>Productos</span>
           </button>
 
+          <button type="button" class="admin-nav-item" data-section="negocio">
+            <span class="admin-nav-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none"><path d="M4 10h16v10H4z"/><path d="M3 6h18l-1 4H4L3 6Z"/><path d="M9 14h6"/></svg>
+            </span>
+            <span>Negocio</span>
+          </button>
+
           <button type="button" class="admin-nav-item" data-section="reportes">
             <span class="admin-nav-icon" aria-hidden="true">
               <svg viewBox="0 0 24 24" fill="none"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>
@@ -260,9 +267,19 @@ if (!estaAutenticado()) {
                       <input id="stock" type="number" min="0" step="1" required />
                     </div>
 
-                    <div class="form-group">
-                      <label for="imagen_url">Imagen URL</label>
-                      <input id="imagen_url" type="url" placeholder="https://..." />
+                    <div class="form-group full">
+                      <label for="imagen_archivo">Imagen del producto</label>
+                      <input id="imagen_archivo" type="file" accept="image/*" />
+                      <input id="imagen_url" type="hidden" />
+                      <div id="imagen-preview" class="imagen-preview" aria-live="polite"></div>
+                      <div class="imagen-acciones">
+                        <button type="button" id="btn-quitar-imagen" class="btn-admin btn-admin-sm btn-admin-ghost" hidden>
+                          Quitar imagen
+                        </button>
+                      </div>
+                      <p class="form-ayuda">
+                        JPG, PNG, WebP, GIF o AVIF. Máximo 5 MB. En el celular puedes elegirla desde la galería.
+                      </p>
                     </div>
 
                     <div class="form-group full">
@@ -305,6 +322,40 @@ if (!estaAutenticado()) {
                 </div>
               </div>
             </div>
+          </section>
+
+          <section class="admin-section" id="section-negocio" aria-label="Negocio" hidden>
+            <article class="panel-card">
+              <div class="panel-card-head">
+                <div>
+                  <h2>Imagen del negocio</h2>
+                  <p>Este logo se muestra en la cabecera del catálogo.</p>
+                </div>
+              </div>
+
+              <div class="business-logo-layout">
+                <div id="logo-preview" class="business-logo-preview" aria-live="polite"></div>
+
+                <form id="logo-form" class="business-logo-form">
+                  <div class="form-group">
+                    <label for="logo-archivo">Archivo de imagen</label>
+                    <input id="logo-archivo" type="file" accept="image/*" />
+                    <p class="form-ayuda">
+                      JPG, PNG, WebP, GIF o AVIF. Máximo 5 MB. En el celular puedes elegirla desde la galería.
+                    </p>
+                  </div>
+
+                  <div class="form-buttons">
+                    <button type="submit" class="btn-admin btn-admin-primary">
+                      Guardar logo
+                    </button>
+                    <button type="button" id="btn-quitar-logo" class="btn-admin btn-admin-ghost" hidden>
+                      Quitar logo
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </article>
           </section>
 
           <section class="admin-section" id="section-reportes" aria-label="Reportes" hidden>

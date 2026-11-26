@@ -1,4 +1,4 @@
-import { apiUrl } from "../config/api.js";
+import { apiUrl, resolverImagen } from "../config/api.js";
 
 const API_BASE = apiUrl("/api");
 const TOKEN_KEY = "pizza_admin_token";
@@ -15,6 +15,10 @@ const SECCIONES = {
   productos: {
     titulo: "Productos",
     subtitulo: "Administra el catálogo, los precios y el inventario.",
+  },
+  negocio: {
+    titulo: "Negocio",
+    subtitulo: "Personaliza la imagen y la identidad de tu negocio.",
   },
   reportes: {
     titulo: "Reportes",
@@ -57,6 +61,19 @@ let busquedaPedidos = "";
 let filtroPedidos = "todos";
 let busquedaProductos = "";
 let filtroCategoria = "todas";
+let archivoImagenProducto = null;
+let imagenProductoAnterior = "";
+let previewImagenProductoUrl = "";
+let logoNegocio = null;
+
+const MAX_IMAGEN_BYTES = 5 * 1024 * 1024;
+const TIPOS_IMAGEN = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+  "image/avif",
+];
 
 export function getToken() {
   return localStorage.getItem(TOKEN_KEY);
@@ -100,9 +117,12 @@ export function estaAutenticado() {
 
 async function apiFetch(path, options = {}) {
   const headers = {
-    "Content-Type": "application/json",
     ...(options.headers || {}),
   };
+
+  if (!(options.body instanceof FormData)) {
+    headers["Content-Type"] = "application/json";
+  }
 
   const token = getToken();
 
@@ -214,6 +234,83 @@ function estadoInfo(estado) {
 
 function iconoSvg(nombre) {
   return ICONOS[nombre] || ICONOS.bolsa;
+}
+
+function validarArchivoImagen(archivo) {
+  if (!archivo) return "Selecciona una imagen.";
+  if (!TIPOS_IMAGEN.includes(archivo.type)) {
+    return "Usa una imagen JPG, PNG, WebP, GIF o AVIF.";
+  }
+  if (archivo.size > MAX_IMAGEN_BYTES) {
+    return "La imagen no puede superar los 5 MB.";
+  }
+  return "";
+}
+
+async function subirArchivoImagen(archivo) {
+  const formulario = new FormData();
+  formulario.append("imagen", archivo);
+
+  return apiFetch("/imagenes", {
+    method: "POST",
+    body: formulario,
+  });
+}
+
+function idImagenLocal(url) {
+  const coincidencia = String(url || "").match(/^\/api\/imagenes\/(\d+)$/);
+  return coincidencia ? Number(coincidencia[1]) : null;
+}
+
+async function eliminarImagenLocal(url) {
+  const id = idImagenLocal(url);
+  if (!id) return;
+
+  try {
+    await apiFetch(`/imagenes/${id}`, { method: "DELETE" });
+  } catch {
+    // La imagen pudo ser compartida o ya no existir.
+  }
+}
+
+function renderizarPreviewProducto(url = "", archivo = null) {
+  const contenedor = document.querySelector("#imagen-preview");
+  if (!contenedor) return;
+
+  if (previewImagenProductoUrl) {
+    URL.revokeObjectURL(previewImagenProductoUrl);
+    previewImagenProductoUrl = "";
+  }
+
+  let src = "";
+
+  if (archivo) {
+    previewImagenProductoUrl = URL.createObjectURL(archivo);
+    src = previewImagenProductoUrl;
+  } else if (url) {
+    src = resolverImagen(url);
+  }
+
+  contenedor.innerHTML = src
+    ? `<img src="${escaparHtml(src)}" alt="Vista previa de la imagen del producto" />`
+    : `<div class="imagen-preview-placeholder"><span aria-hidden="true">🍕</span><small>Sin imagen</small></div>`;
+
+  const boton = document.querySelector("#btn-quitar-imagen");
+  if (boton) boton.hidden = !src;
+}
+
+function renderizarLogoNegocio() {
+  const contenedor = document.querySelector("#logo-preview");
+  if (!contenedor) return;
+
+  const src = logoNegocio
+    ? resolverImagen(logoNegocio)
+    : "./el-callejon-logo.png";
+
+  contenedor.innerHTML = `<img src="${escaparHtml(src)}" alt="Logo actual del negocio" />`;
+
+  const boton = document.querySelector("#btn-quitar-logo");
+  if (boton) boton.hidden = !logoNegocio;
 }
 
 function toast(mensaje, tipo = "success") {
@@ -1002,6 +1099,117 @@ export async function cargarPizzas() {
   }
 }
 
+export async function cargarNegocio() {
+  try {
+    const data = await apiFetch("/configuracion/negocio");
+    logoNegocio = data.logo_url || null;
+  } catch {
+    logoNegocio = null;
+  }
+
+  renderizarLogoNegocio();
+}
+
+async function guardarLogo(event) {
+  event.preventDefault();
+
+  const input = document.querySelector("#logo-archivo");
+  const archivo = input?.files?.[0];
+  const error = validarArchivoImagen(archivo);
+
+  if (error) {
+    toast(error, "error");
+    return;
+  }
+
+  const boton = event.currentTarget.querySelector('button[type="submit"]');
+
+  try {
+    if (boton) {
+      boton.disabled = true;
+      boton.textContent = "Subiendo...";
+    }
+
+    const formulario = new FormData();
+    formulario.append("imagen", archivo);
+
+    const data = await apiFetch("/configuracion/negocio/logo", {
+      method: "POST",
+      body: formulario,
+    });
+
+    logoNegocio = data.logo_url || null;
+    if (input) input.value = "";
+    renderizarLogoNegocio();
+    toast("Logo del negocio actualizado.");
+  } catch (error) {
+    toast(error.message, "error");
+  } finally {
+    if (boton) {
+      boton.disabled = false;
+      boton.textContent = "Guardar logo";
+    }
+  }
+}
+
+async function quitarLogo() {
+  if (!logoNegocio) {
+    toast("El negocio ya usa el logo predeterminado.", "info");
+    return;
+  }
+
+  const confirmar = window.confirm(
+    "¿Quitar el logo personalizado y volver al logo predeterminado?"
+  );
+
+  if (!confirmar) return;
+
+  try {
+    await apiFetch("/configuracion/negocio/logo", { method: "DELETE" });
+    logoNegocio = null;
+    renderizarLogoNegocio();
+    toast("Logo predeterminado restaurado.");
+  } catch (error) {
+    toast(error.message, "error");
+  }
+}
+
+function manejarSeleccionImagenProducto(event) {
+  const input = event.currentTarget;
+  const archivo = input.files?.[0] || null;
+  const imagenActual = document.querySelector("#imagen_url").value.trim();
+
+  if (!archivo) {
+    archivoImagenProducto = null;
+    renderizarPreviewProducto(imagenActual);
+    return;
+  }
+
+  const error = validarArchivoImagen(archivo);
+
+  if (error) {
+    input.value = "";
+    archivoImagenProducto = null;
+    toast(error, "error");
+    renderizarPreviewProducto(imagenActual);
+    return;
+  }
+
+  archivoImagenProducto = archivo;
+  document.querySelector("#imagen_url").value = "";
+  renderizarPreviewProducto("", archivo);
+}
+
+function quitarImagenProducto() {
+  archivoImagenProducto = null;
+
+  const input = document.querySelector("#imagen_archivo");
+  if (input) input.value = "";
+
+  document.querySelector("#imagen_url").value = "";
+  renderizarPreviewProducto();
+}
+
 function renderCategoriasFiltro() {
   const select = document.querySelector("#productos-filtro-categoria");
   const datalist = document.querySelector("#categorias-producto");
@@ -1102,7 +1310,7 @@ function renderPizzas() {
             ${
               pizza.imagen_url
                 ? `<img src="${escaparHtml(
-                    pizza.imagen_url
+                    resolverImagen(pizza.imagen_url)
                   )}" alt="${escaparHtml(pizza.nombre)}" loading="lazy" />`
                 : `<div class="pizza-placeholder"><span aria-hidden="true">🍕</span><small>Sin imagen</small></div>`
             }
@@ -1173,7 +1381,16 @@ function editarPizza(id) {
   document.querySelector("#descripcion").value = pizza.descripcion;
   document.querySelector("#precio").value = pizza.precio;
   document.querySelector("#stock").value = pizza.stock;
-  document.querySelector("#imagen_url").value = pizza.imagen_url || "";
+
+  const imagenAnterior = pizza.imagen_url || "";
+  const inputImagen = document.querySelector("#imagen_archivo");
+
+  imagenProductoAnterior = imagenAnterior;
+  archivoImagenProducto = null;
+  if (inputImagen) inputImagen.value = "";
+  document.querySelector("#imagen_url").value = imagenAnterior;
+  renderizarPreviewProducto(imagenAnterior);
+
   document.querySelector("#categoria").value = pizza.categoria || "Pizzas";
   document.querySelector("#activo").checked = Boolean(pizza.activo);
   document.querySelector("#form-title").textContent = "Editar producto";
@@ -1215,28 +1432,27 @@ export async function guardarPizza(event) {
 
   const id = document.querySelector("#pizza-id").value;
   const boton = event.currentTarget.querySelector('button[type="submit"]');
-  const datos = {
-    nombre: document.querySelector("#nombre").value.trim(),
-    descripcion: document.querySelector("#descripcion").value.trim(),
-    precio: Number(document.querySelector("#precio").value),
-    stock: Number(document.querySelector("#stock").value),
-    imagen_url: document.querySelector("#imagen_url").value.trim(),
-    categoria:
-      document.querySelector("#categoria").value.trim() || "Pizzas",
-    activo: document.querySelector("#activo").checked,
-  };
+  const nombre = document.querySelector("#nombre").value.trim();
+  const descripcion = document.querySelector("#descripcion").value.trim();
+  const precio = Number(document.querySelector("#precio").value);
+  const stock = Number(document.querySelector("#stock").value);
+  const categoria =
+    document.querySelector("#categoria").value.trim() || "Pizzas";
+  const activo = document.querySelector("#activo").checked;
+  const imagenActual = document.querySelector("#imagen_url").value.trim();
+  const imagenAnterior = imagenProductoAnterior;
 
-  if (!datos.nombre || !datos.descripcion) {
+  if (!nombre || !descripcion) {
     toast("El nombre y la descripción son obligatorios.", "error");
     return;
   }
 
-  if (!Number.isFinite(datos.precio) || datos.precio < 0) {
+  if (!Number.isFinite(precio) || precio < 0) {
     toast("El precio debe ser un número mayor o igual a 0.", "error");
     return;
   }
 
-  if (!Number.isInteger(datos.stock) || datos.stock < 0) {
+  if (!Number.isInteger(stock) || stock < 0) {
     toast("El stock debe ser un entero mayor o igual a 0.", "error");
     return;
   }
@@ -1244,8 +1460,28 @@ export async function guardarPizza(event) {
   try {
     if (boton) {
       boton.disabled = true;
-      boton.textContent = "Guardando...";
+      boton.textContent = archivoImagenProducto
+        ? "Subiendo imagen..."
+        : "Guardando...";
     }
+
+    let imagenUrl = imagenActual || null;
+
+    if (archivoImagenProducto) {
+      const subida = await subirArchivoImagen(archivoImagenProducto);
+      imagenUrl = subida.url;
+      if (boton) boton.textContent = "Guardando...";
+    }
+
+    const datos = {
+      nombre,
+      descripcion,
+      precio,
+      stock,
+      imagen_url: imagenUrl,
+      categoria,
+      activo,
+    };
 
     if (id) {
       await apiFetch(`/pizzas/${id}`, {
@@ -1257,6 +1493,10 @@ export async function guardarPizza(event) {
         method: "POST",
         body: JSON.stringify(datos),
       });
+    }
+
+    if (imagenAnterior && imagenAnterior !== imagenUrl) {
+      await eliminarImagenLocal(imagenAnterior);
     }
 
     limpiarFormulario();
@@ -1286,6 +1526,15 @@ export function limpiarFormulario() {
   document.querySelector("#activo").checked = true;
   document.querySelector("#categoria").value = "Pizzas";
   document.querySelector("#form-title").textContent = "Nuevo producto";
+
+  archivoImagenProducto = null;
+  imagenProductoAnterior = "";
+
+  const inputImagen = document.querySelector("#imagen_archivo");
+  if (inputImagen) inputImagen.value = "";
+
+  document.querySelector("#imagen_url").value = "";
+  renderizarPreviewProducto();
 }
 
 export async function cargarReporteMensual() {
@@ -1504,6 +1753,7 @@ async function refrescarTodo() {
     cargarDashboard(),
     cargarPedidos(),
     cargarPizzas(),
+    cargarNegocio(),
     cargarReporteMensual(),
   ]);
 
@@ -1557,6 +1807,19 @@ function configurarEventos() {
       filtroCategoria = event.target.value;
       renderPizzas();
     });
+
+  document
+    .querySelector("#imagen_archivo")
+    ?.addEventListener("change", manejarSeleccionImagenProducto);
+
+  document
+    .querySelector("#btn-quitar-imagen")
+    ?.addEventListener("click", quitarImagenProducto);
+
+  document.querySelector("#logo-form")?.addEventListener("submit", guardarLogo);
+  document
+    .querySelector("#btn-quitar-logo")
+    ?.addEventListener("click", quitarLogo);
 
   document.addEventListener("click", (event) => {
     const cerrar = event.target.closest("[data-cerrar-modal]");
@@ -1638,9 +1901,42 @@ function configurarEventos() {
     },
     true
   );
+
+  document.querySelector("#imagen-preview")?.addEventListener(
+    "error",
+    (event) => {
+      if (!(event.target instanceof HTMLImageElement)) return;
+
+      const contenedor = document.querySelector("#imagen-preview");
+      if (!contenedor) return;
+
+      contenedor.innerHTML = `
+        <div class="imagen-preview-placeholder">
+          <span aria-hidden="true">🍕</span>
+          <small>Sin imagen</small>
+        </div>
+      `;
+    },
+    true
+  );
+
+  document.querySelector("#logo-preview")?.addEventListener(
+    "error",
+    (event) => {
+      const imagen = event.target;
+
+      if (!(imagen instanceof HTMLImageElement)) return;
+      if (imagen.dataset.fallback === "true") return;
+
+      imagen.dataset.fallback = "true";
+      imagen.src = "./el-callejon-logo.png";
+    },
+    true
+  );
 }
 
 export async function iniciarPanelAdmin() {
   configurarEventos();
+  renderizarPreviewProducto();
   await refrescarTodo();
 }
