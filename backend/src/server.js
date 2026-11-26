@@ -8,6 +8,8 @@ const pizzaRoutes = require("./routes/pizza.routes");
 const pedidoRoutes = require("./routes/pedido.routes");
 const authRoutes = require("./routes/auth.routes");
 const reporteRoutes = require("./routes/reporte.routes");
+const imagenRoutes = require("./routes/imagen.routes");
+const configuracionRoutes = require("./routes/configuracion.routes");
 
 const app = express();
 
@@ -42,6 +44,8 @@ app.use("/api/auth", authRoutes);
 app.use("/api/pizzas", pizzaRoutes);
 app.use("/api/pedidos", pedidoRoutes);
 app.use("/api/reportes", reporteRoutes);
+app.use("/api/imagenes", imagenRoutes);
+app.use("/api/configuracion", configuracionRoutes);
 
 app.get("/", (req, res) => {
   res.json({

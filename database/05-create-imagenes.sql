@@ -1,0 +1,20 @@
+CREATE TABLE IF NOT EXISTS imagenes (
+    id SERIAL PRIMARY KEY,
+
+    datos BYTEA NOT NULL,
+
+    mime_type VARCHAR(80) NOT NULL,
+
+    tamano INTEGER NOT NULL
+        CHECK (tamano > 0),
+
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS configuracion (
+    clave VARCHAR(80) PRIMARY KEY,
+
+    valor TEXT,
+
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
