@@ -1,4 +1,5 @@
 import {
+  cargarLogoNegocio,
   cargarPizzasCliente,
   inicializarCarrito,
   inicializarNavegacion,
@@ -6,4 +7,5 @@ import {
 
 inicializarNavegacion();
 inicializarCarrito();
+cargarLogoNegocio();
 cargarPizzasCliente();

@@ -20,6 +20,7 @@
   width: 42px;
   height: 42px;
   place-items: center;
+  object-fit: cover;
   border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 14px;
   background: #1d1c19;

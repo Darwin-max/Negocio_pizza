@@ -1,4 +1,4 @@
-import { apiUrl } from "../config/api.js";
+import { apiUrl, resolverImagen } from "../config/api.js";
 import { whatsappUrl } from "../config/whatsapp.js";
 
 const API_PIZZAS = apiUrl("/api/pizzas");
@@ -60,8 +60,9 @@ function productoDisponible(producto) {
 
 function imagenProducto(producto) {
   const nombre = escapeHtml(producto.nombre);
+  const imagen = resolverImagen(producto.imagen_url);
 
-  if (!producto.imagen_url) {
+  if (!imagen) {
     const categoria = textoNormalizado(categoriaProducto(producto));
     const icono = categoria.includes("bebida") || categoria.includes("granizado")
       ? "🥤"
@@ -77,7 +78,34 @@ function imagenProducto(producto) {
     return `<div class="pizza-placeholder" aria-hidden="true">${icono}</div>`;
   }
 
-  return `<img src="${escapeHtml(producto.imagen_url)}" alt="${nombre}" loading="lazy" decoding="async" width="480" height="360" />`;
+  return `<img src="${escapeHtml(imagen)}" alt="${nombre}" loading="lazy" decoding="async" width="480" height="360" />`;
+}
+
+export async function cargarLogoNegocio() {
+  const logo = document.querySelector("#logo-negocio");
+  if (!logo) return;
+
+  const fallback =
+    logo.getAttribute("data-logo-fallback") || "./el-callejon-logo.png";
+
+  try {
+    const response = await fetch(apiUrl("/api/configuracion/negocio"));
+    if (!response.ok) return;
+
+    const data = await response.json();
+    if (!data?.logo_url) return;
+
+    logo.addEventListener(
+      "error",
+      () => {
+        logo.src = fallback;
+      },
+      { once: true }
+    );
+    logo.src = resolverImagen(data.logo_url);
+  } catch {
+    // Sin conexión se conserva el logo estático.
+  }
 }
 
 function totalItemsCarrito() {
