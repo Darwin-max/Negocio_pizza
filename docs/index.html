@@ -11,22 +11,31 @@
     />
     <meta name="theme-color" content="#18181b" />
     <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://darwin-max.github.io/Negocio_pizza/" />
     <meta property="og:type" content="website" />
     <meta property="og:title" content="El Callejón | Menú y combos" />
     <meta
       property="og:description"
       content="Menú interactivo en 3D, combos, búsqueda de productos y pedidos sencillos por WhatsApp."
     />
+    <meta property="og:url" content="https://darwin-max.github.io/Negocio_pizza/" />
+    <meta
+      property="og:image"
+      content="https://darwin-max.github.io/Negocio_pizza/el-callejon-logo.png"
+    />
     <meta property="og:locale" content="es_CO" />
-    <script type="module" crossorigin src="./assets/main-Bqv_j3aj.js"></script>
+    <meta name="twitter:card" content="summary" />
+    <script type="module" crossorigin src="./assets/main-BFekkuca.js"></script>
     <link rel="modulepreload" crossorigin href="./assets/api-CJ2HZa6b.js">
-    <link rel="stylesheet" crossorigin href="./assets/main-CvB6pLT8.css">
+    <link rel="stylesheet" crossorigin href="./assets/main-BU8R2Pwr.css">
   </head>
   <body>
+    <a class="skip-link" href="#menu">Saltar al menú</a>
+
     <div class="site">
       <header class="site-header">
         <div class="site-header-inner">
-          <a class="site-brand" href="#inicio">
+          <a class="site-brand" href="#inicio" aria-label="El Callejón, ir al inicio">
             <img
               id="logo-negocio"
               class="site-brand-icon"
@@ -47,21 +56,71 @@
             <a href="#combos">Combos</a>
             <a href="#menu">Menú</a>
           </nav>
+
+          <div class="site-header-actions">
+            <a
+              class="header-whatsapp"
+              data-whatsapp-link
+              href="https://wa.me/573122759195"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <svg class="whatsapp-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none">
+                <path d="M20.4 11.7a8.3 8.3 0 0 1-12.3 7.2L3.8 20l1.1-4.2a8.3 8.3 0 1 1 15.5-4.1Z" />
+                <path d="M9 8.7c.2-.4.4-.4.7-.4h.5l.9 2.1-1 .9c.6 1.2 1.5 2.1 2.8 2.8l.8-1 2.1.9v.5c0 .3-.1.6-.4.7-.8.4-1.7.4-2.6.1-2.2-.8-4.2-2.7-5-5-.3-.9-.2-1.8.2-2.6Z" />
+              </svg>
+              <span>Pedir por WhatsApp</span>
+            </a>
+            <button
+              type="button"
+              class="btn-carrito"
+              id="btn-abrir-carrito-header"
+              aria-label="Ver mi pedido"
+            >
+              <svg aria-hidden="true" viewBox="0 0 24 24" fill="none">
+                <path d="M3 4h2l2.1 10.2a2 2 0 0 0 2 1.6h8.8a2 2 0 0 0 1.9-1.4L22 8H6" />
+                <circle cx="10" cy="20" r="1" />
+                <circle cx="18" cy="20" r="1" />
+              </svg>
+              <span class="btn-carrito-label">Mi pedido</span>
+              <span class="btn-carrito-count" data-cart-count>0</span>
+            </button>
+          </div>
         </div>
       </header>
 
       <main id="inicio">
         <section class="catalog-banner" aria-labelledby="catalog-banner-title">
           <div class="catalog-banner-copy">
+            <p class="catalog-banner-kicker">🍕 Pizzería artesanal · El Callejón</p>
             <h1 id="catalog-banner-title">Delivery, Pick Up o visítanos en el local</h1>
-            <p>Escoge tus favoritos y disfrútalos como más te guste.</p>
+            <p class="catalog-banner-lead">
+              Escoge tus favoritos, arma tu pedido y envíalo por WhatsApp. Nosotros nos encargamos del resto.
+            </p>
             <ul class="catalog-banner-tags" aria-label="Opciones para pedir">
               <li>🛵 Domicilio</li>
               <li>🥡 Para recoger</li>
               <li>🍕 Hecha al momento</li>
             </ul>
+            <div class="catalog-banner-actions">
+              <a class="btn btn-primary" href="#menu">
+                Ver el menú <span aria-hidden="true">→</span>
+              </a>
+              <a
+                class="btn btn-outline"
+                data-whatsapp-link
+                href="https://wa.me/573122759195"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Pedir por WhatsApp
+              </a>
+            </div>
           </div>
-          <span class="catalog-banner-art" aria-hidden="true">🍕</span>
+          <div class="catalog-banner-art" aria-hidden="true">
+            <span class="catalog-banner-emoji">🍕</span>
+            <span class="catalog-banner-note">Hecha al momento</span>
+          </div>
         </section>
 
         <section class="menu-section combos-section" id="combos" aria-labelledby="combos-title" hidden>
@@ -71,54 +130,128 @@
         </section>
 
         <section class="menu-section" id="menu" aria-labelledby="menu-title">
-          <h2 id="menu-title" class="sr-only">Nuestro menú</h2>
-          <div class="catalog-tools" aria-label="Buscar y filtrar el menú">
-            <label class="catalog-search">
-              <span class="sr-only">Buscar productos</span>
-              <svg aria-hidden="true" viewBox="0 0 24 24" fill="none">
-                <circle cx="10.8" cy="10.8" r="6.8"></circle>
-                <path d="m16 16 4.5 4.5"></path>
-              </svg>
-              <input id="menu-search" type="search" placeholder="Buscar producto o ingrediente..." autocomplete="off" />
-              <button id="clear-menu-search" class="search-clear" type="button" aria-label="Borrar búsqueda" hidden>×</button>
-            </label>
-            <div id="menu-categories" class="menu-categories" aria-label="Categorías del menú"></div>
-            <details class="catalog-filter">
-              <summary>
-                <span><span aria-hidden="true">☷</span> Filtrar catálogo</span>
-                <span class="filter-summary-hint">Orden y disponibilidad <span aria-hidden="true">⌄</span></span>
-              </summary>
-              <div class="catalog-filter-options">
-                <label class="catalog-sort">
-                  Ordenar por
-                  <select id="menu-sort">
-                    <option value="featured">Recomendados</option>
-                    <option value="price-asc">Menor precio</option>
-                    <option value="price-desc">Mayor precio</option>
-                    <option value="name">Nombre A-Z</option>
-                  </select>
-                </label>
-                <label class="available-filter">
-                  <input id="available-only" type="checkbox" />
-                  <span>Mostrar solo disponibles</span>
-                </label>
-              </div>
-            </details>
-            <p id="menu-results-count" class="menu-results-count" aria-live="polite"></p>
+          <div class="menu-heading">
+            <div>
+              <p class="section-kicker">Pide a tu manera</p>
+              <h2 id="menu-title">Nuestro menú</h2>
+            </div>
+            <p class="menu-heading-note">
+              Elige tus favoritos, agrégalos y envía el pedido por WhatsApp.
+            </p>
           </div>
+
+          <div class="catalog-tools" aria-label="Buscar y filtrar el menú">
+            <div class="catalog-toolbar">
+              <label class="catalog-search">
+                <span class="sr-only">Buscar productos</span>
+                <svg aria-hidden="true" viewBox="0 0 24 24" fill="none">
+                  <circle cx="10.8" cy="10.8" r="6.8"></circle>
+                  <path d="m16 16 4.5 4.5"></path>
+                </svg>
+                <input
+                  id="menu-search"
+                  type="search"
+                  placeholder="Buscar producto o ingrediente..."
+                  autocomplete="off"
+                  enterkeyhint="search"
+                />
+                <button id="clear-menu-search" class="search-clear" type="button" aria-label="Borrar búsqueda" hidden>×</button>
+              </label>
+
+              <details class="catalog-filter">
+                <summary>
+                  <span>
+                    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none">
+                      <path d="M4 7h16M7 12h10M10 17h4"></path>
+                    </svg>
+                    Filtrar
+                  </span>
+                  <span class="filter-summary-hint" id="filter-summary-hint">Recomendados</span>
+                </summary>
+                <div class="catalog-filter-options">
+                  <label class="catalog-sort">
+                    Ordenar por
+                    <select id="menu-sort">
+                      <option value="featured">Recomendados</option>
+                      <option value="price-asc">Menor precio</option>
+                      <option value="price-desc">Mayor precio</option>
+                      <option value="name">Nombre A-Z</option>
+                    </select>
+                  </label>
+                  <label class="available-filter">
+                    <input id="available-only" type="checkbox" />
+                    <span>Mostrar solo disponibles</span>
+                  </label>
+                </div>
+              </details>
+            </div>
+
+            <div id="menu-categories" class="menu-categories" aria-label="Categorías del menú"></div>
+
+            <div class="catalog-tools-meta">
+              <p id="menu-results-count" class="menu-results-count" aria-live="polite"></p>
+              <button type="button" id="menu-clear-filters" class="menu-clear-filters" hidden>
+                Limpiar filtros
+              </button>
+            </div>
+          </div>
+
           <div id="pizzas-cliente" class="pizzas-cliente">
-            <div class="menu-loading" role="status">Cargando menú...</div>
+            <div class="menu-loading" role="status">
+              <span class="menu-loading-dot" aria-hidden="true"></span>
+              Cargando menú...
+            </div>
           </div>
         </section>
       </main>
 
       <footer class="site-footer">
         <div class="site-footer-inner">
-          <strong>🍕 El Callejón</strong>
-          <nav class="footer-nav" aria-label="Información legal">
-            <a href="./privacy.html">Política de privacidad</a>
+          <div class="footer-brand">
+            <strong>🍕 El Callejón</strong>
+            <p>
+              Pizzas, combos y bebidas para compartir. Pide fácil por WhatsApp y
+              disfruta tus favoritos recién hechos.
+            </p>
+          </div>
+
+          <nav class="footer-nav" aria-label="Navegación del sitio">
+            <span class="footer-nav-title">Explora</span>
+            <a href="#combos">Combos</a>
+            <a href="#menu">Menú</a>
+            <a href="./privacy.html">Privacidad</a>
           </nav>
+
+          <div class="footer-contact">
+            <span class="footer-nav-title">Contacto</span>
+            <a
+              data-whatsapp-link
+              href="https://wa.me/573122759195"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              WhatsApp
+            </a>
+            <a
+              href="https://www.instagram.com/elcallejon_n4496/"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Instagram
+            </a>
+            <a
+              href="https://www.facebook.com/profile.php?id=61595493282153"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Facebook
+            </a>
+          </div>
+        </div>
+
+        <div class="site-footer-bottom">
           <p class="footer-copy">© 2026 El Callejón. Todos los derechos reservados.</p>
+          <p class="footer-copy">Hecho para pedir fácil. 🍕</p>
         </div>
       </footer>
     </div>
@@ -130,7 +263,7 @@
           <circle cx="10" cy="20" r="1" />
           <circle cx="18" cy="20" r="1" />
         </svg>
-        <span id="carrito-count" class="btn-carrito-count">0</span>
+        <span id="carrito-count" class="btn-carrito-count" data-cart-count>0</span>
       </button>
       <a class="quick-action quick-action-whatsapp" data-whatsapp-link href="https://wa.me/573122759195" target="_blank" rel="noopener noreferrer" aria-label="Escríbenos por WhatsApp">
         <svg class="whatsapp-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none">
@@ -142,19 +275,39 @@
 
     <aside class="social-panel" id="social-panel" aria-label="Redes sociales" aria-hidden="true" hidden>
       <button type="button" class="social-panel-close" id="social-panel-close" aria-label="Cerrar redes sociales">×</button>
-      <a class="social-link social-instagram" data-social-link href="https://www.instagram.com/elcallejon_n4496?psln=MXVsbGRteXI3MW51Mg==" target="_blank" rel="noopener noreferrer" aria-label="Instagram">◎</a>
+      <a class="social-link social-instagram" data-social-link href="https://www.instagram.com/elcallejon_n4496/" target="_blank" rel="noopener noreferrer" aria-label="Instagram">◎</a>
       <a class="social-link social-facebook" data-social-link href="https://www.facebook.com/profile.php?id=61595493282153" target="_blank" rel="noopener noreferrer" aria-label="Facebook">f</a>
-      <a class="social-link social-tiktok" data-social-link href="https://www.tiktok.com/" target="_blank" rel="noopener noreferrer" aria-label="TikTok">♪</a>
     </aside>
 
     <div id="carrito-fondo" class="carrito-fondo" aria-hidden="true"></div>
 
-    <aside id="carrito-panel" class="carrito-panel" aria-label="Tu pedido" aria-hidden="true">
+    <aside
+      id="carrito-panel"
+      class="carrito-panel"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="carrito-titulo"
+      aria-hidden="true"
+    >
       <div class="carrito-header">
-        <h2>Tu pedido</h2>
-        <button type="button" id="btn-cerrar-carrito" class="btn-cerrar">Cerrar</button>
+        <div>
+          <h2 id="carrito-titulo">Tu pedido</h2>
+          <p id="carrito-subtitulo" class="carrito-subtitulo">Aún no has agregado productos</p>
+        </div>
+        <button type="button" id="btn-cerrar-carrito" class="btn-cerrar" aria-label="Cerrar carrito">
+          Cerrar
+        </button>
       </div>
-      <p id="carrito-vacio" class="carrito-vacio">Aún no has agregado productos.</p>
+
+      <div id="carrito-vacio" class="carrito-vacio">
+        <span class="carrito-vacio-icon" aria-hidden="true">🛒</span>
+        <h3>Tu pedido está vacío</h3>
+        <p>Agrega tus productos favoritos y envíanos el pedido por WhatsApp.</p>
+        <button type="button" class="btn btn-primary" id="btn-carrito-ir-menu">
+          Explorar el menú
+        </button>
+      </div>
+
       <div id="carrito-lista" class="carrito-lista"></div>
       <div id="carrito-acciones" class="carrito-acciones" hidden>
         <label class="carrito-campo" for="cliente-telefono">
