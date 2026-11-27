@@ -108,6 +108,11 @@ const construirContenidoGemini = (historial) => {
     }
   }
 
+  // Gemini espera que el historial inicie con el turno del cliente.
+  while (contents.length > 0 && contents[0].role === "model") {
+    contents.shift();
+  }
+
   return contents;
 };
 
@@ -335,12 +340,16 @@ const responderMensaje = async (mensaje, destinatario) => {
         });
       } catch (error) {
         console.error("Error al registrar pedido recibido por WhatsApp:", error);
+        const respuestaError = `No pude registrar el pedido todavía: ${error.message}. Conservé el borrador; revisemos la disponibilidad y vuelve a escribir “confirmar pedido”.`;
         await guardarConversacionWhatsapp(
           destinatario,
           conversacion.pedido,
-          historialConMensaje
+          [
+            ...historialConMensaje,
+            { role: "assistant", text: respuestaError },
+          ].slice(-maximoMensajesHistorial)
         );
-        return `No pude registrar el pedido todavía: ${error.message}. Conservé el borrador; revisemos la disponibilidad y vuelve a escribir “confirmar pedido”.`;
+        return respuestaError;
       }
 
       const respuesta = crearRespuestaPedidoGuardado(pedidoCreado);
