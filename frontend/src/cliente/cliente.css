@@ -577,6 +577,10 @@
   gap: 12px;
   padding-bottom: env(safe-area-inset-bottom, 0);
 }
+.carrito-acciones[hidden],
+.carrito-vacio[hidden] {
+  display: none;
+}
 .btn-confirmar { padding: 14px; width: 100%; }
 .btn-confirmar:disabled,
 .btn:disabled { opacity: 0.6; cursor: not-allowed; }

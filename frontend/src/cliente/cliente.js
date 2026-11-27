@@ -13,6 +13,7 @@ let ordenMenu = "featured";
 let pedidoRegistrado = null;
 let enviandoPedido = false;
 let mensajeCarrito = "";
+let disparadorCarrito = null;
 
 function escapeHtml(valor) {
   return String(valor)
@@ -145,12 +146,12 @@ function mensajePedidoWhatsapp(numeroPedido) {
 }
 
 function actualizarResumenCarrito() {
-  const contador = document.querySelector("#carrito-count");
   const total = document.querySelector("#carrito-total");
   const whatsappPedido = document.querySelector("#btn-whatsapp-pedido");
   const registrar = document.querySelector("#btn-registrar-pedido");
   const estado = document.querySelector("#carrito-estado");
   const firmaActual = firmaCarrito();
+  const cantidadItems = totalItemsCarrito();
 
   if (pedidoRegistrado && pedidoRegistrado.firma !== firmaActual) {
     const pedidoAnterior = pedidoRegistrado.id;
@@ -163,8 +164,31 @@ function actualizarResumenCarrito() {
     mensajeCarrito = "";
   }
 
-  if (contador) {
-    contador.textContent = String(totalItemsCarrito());
+  document.querySelectorAll("[data-cart-count]").forEach((contador) => {
+    contador.textContent = cantidadItems > 99 ? "99+" : String(cantidadItems);
+  });
+
+  document
+    .querySelectorAll("#btn-abrir-carrito-header, #btn-abrir-carrito-flotante")
+    .forEach((boton) => {
+      boton.setAttribute(
+        "aria-label",
+        cantidadItems === 0
+          ? "Ver mi pedido, vacío"
+          : `Ver mi pedido, ${cantidadItems} ${
+              cantidadItems === 1 ? "producto" : "productos"
+            }`
+      );
+    });
+
+  const subtitulo = document.querySelector("#carrito-subtitulo");
+  if (subtitulo) {
+    subtitulo.textContent =
+      cantidadItems === 0
+        ? "Aún no has agregado productos"
+        : `${cantidadItems} ${
+            cantidadItems === 1 ? "producto" : "productos"
+          } en tu pedido`;
   }
 
   if (total) {
@@ -338,20 +362,44 @@ function abrirCarrito() {
   const panel = document.querySelector("#carrito-panel");
   const fondo = document.querySelector("#carrito-fondo");
 
+  if (!panel?.classList.contains("abierto") && document.activeElement instanceof HTMLElement) {
+    disparadorCarrito = document.activeElement;
+  }
+
   panel?.classList.add("abierto");
   fondo?.classList.add("visible");
   panel?.setAttribute("aria-hidden", "false");
   document.body.classList.add("carrito-abierto");
+  document.querySelector("#btn-cerrar-carrito")?.focus({ preventScroll: true });
+}
+
+function irAlMenuDesdeCarrito() {
+  cerrarCarrito();
+  document.querySelector("#menu")?.scrollIntoView({ behavior: "smooth" });
+  window.setTimeout(() => {
+    document.querySelector("#menu-search")?.focus({ preventScroll: true });
+  }, 350);
 }
 
 function cerrarCarrito() {
   const panel = document.querySelector("#carrito-panel");
   const fondo = document.querySelector("#carrito-fondo");
+  const estabaAbierto = panel?.classList.contains("abierto");
 
   panel?.classList.remove("abierto");
   fondo?.classList.remove("visible");
   panel?.setAttribute("aria-hidden", "true");
   document.body.classList.remove("carrito-abierto");
+
+  if (
+    estabaAbierto &&
+    panel?.contains(document.activeElement) &&
+    disparadorCarrito
+  ) {
+    disparadorCarrito.focus({ preventScroll: true });
+  }
+
+  if (estabaAbierto) disparadorCarrito = null;
 }
 
 function voltearCarta(card, forzar) {
@@ -381,11 +429,17 @@ function cerrarRedes() {
 export function inicializarCarrito() {
   document.querySelector("#btn-abrir-carrito")?.addEventListener("click", abrirCarrito);
   document
+    .querySelector("#btn-abrir-carrito-header")
+    ?.addEventListener("click", abrirCarrito);
+  document
     .querySelector("#btn-abrir-carrito-flotante")
     ?.addEventListener("click", abrirCarrito);
   document
     .querySelector("#btn-abrir-carrito-contacto")
     ?.addEventListener("click", abrirCarrito);
+  document
+    .querySelector("#btn-carrito-ir-menu")
+    ?.addEventListener("click", irAlMenuDesdeCarrito);
   document.querySelector("#btn-cerrar-carrito")?.addEventListener("click", cerrarCarrito);
   document.querySelector("#carrito-fondo")?.addEventListener("click", cerrarCarrito);
   document.querySelector("#social-panel-close")?.addEventListener("click", cerrarRedes);
@@ -454,6 +508,37 @@ export function inicializarCarrito() {
     if (event.key === "Escape") {
       cerrarCarrito();
       cerrarRedes();
+      return;
+    }
+
+    if (event.key !== "Tab") return;
+
+    const panel = document.querySelector("#carrito-panel");
+    if (!panel?.classList.contains("abierto")) return;
+
+    const enfocables = [
+      ...panel.querySelectorAll(
+        'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      ),
+    ].filter((elemento) => elemento.getClientRects().length > 0);
+
+    if (enfocables.length === 0) return;
+
+    const primero = enfocables[0];
+    const ultimo = enfocables[enfocables.length - 1];
+
+    if (!panel.contains(document.activeElement)) {
+      event.preventDefault();
+      primero.focus();
+      return;
+    }
+
+    if (event.shiftKey && document.activeElement === primero) {
+      event.preventDefault();
+      ultimo.focus();
+    } else if (!event.shiftKey && document.activeElement === ultimo) {
+      event.preventDefault();
+      primero.focus();
     }
   });
 
@@ -488,6 +573,63 @@ export function inicializarNavegacion() {
     },
     { passive: true }
   );
+}
+
+const ETIQUETAS_ORDEN = {
+  featured: "Recomendados",
+  "price-asc": "Menor precio",
+  "price-desc": "Mayor precio",
+  name: "Nombre A-Z",
+};
+
+function filtrosActivos() {
+  return (
+    categoriaSeleccionada !== "todo" ||
+    Boolean(busquedaMenu) ||
+    soloDisponibles ||
+    ordenMenu !== "featured"
+  );
+}
+
+function actualizarResumenFiltros() {
+  const resumen = document.querySelector("#filter-summary-hint");
+  const limpiar = document.querySelector("#menu-clear-filters");
+  const partes = [];
+
+  if (categoriaSeleccionada !== "todo") {
+    const categoriaActiva = document
+      .querySelector("#menu-categories .menu-category.activo span")
+      ?.textContent?.trim();
+    if (categoriaActiva) partes.push(categoriaActiva);
+  }
+
+  partes.push(ETIQUETAS_ORDEN[ordenMenu] || "Recomendados");
+
+  if (soloDisponibles) partes.push("Solo disponibles");
+
+  if (resumen) resumen.textContent = partes.join(" · ");
+  if (limpiar) limpiar.hidden = !filtrosActivos();
+}
+
+function limpiarFiltrosMenu() {
+  categoriaSeleccionada = "todo";
+  busquedaMenu = "";
+  soloDisponibles = false;
+  ordenMenu = "featured";
+
+  const busqueda = document.querySelector("#menu-search");
+  const disponibles = document.querySelector("#available-only");
+  const orden = document.querySelector("#menu-sort");
+  const borrar = document.querySelector("#clear-menu-search");
+
+  if (busqueda) busqueda.value = "";
+  if (disponibles) disponibles.checked = false;
+  if (orden) orden.value = "featured";
+  if (borrar) borrar.hidden = true;
+  document.querySelector(".catalog-filter")?.removeAttribute("open");
+
+  renderCategoriasMenu();
+  renderPizzasFiltradas();
 }
 
 function renderCategoriasMenu() {
@@ -563,29 +705,20 @@ function renderPizzasFiltradas() {
     }`;
   }
 
+  actualizarResumenFiltros();
+
   if (pizzas.length === 0) {
     contenedor.innerHTML = `
       <div class="menu-empty" role="status">
-        <p>No encontramos productos con esos filtros.</p>
-        <button type="button" class="btn btn-secondary" id="clear-menu-filters">Limpiar filtros</button>
+        <span class="menu-empty-icon" aria-hidden="true">🔎</span>
+        <h3>No encontramos coincidencias</h3>
+        <p>Prueba con otro nombre o limpia los filtros para volver a ver todo el menú.</p>
+        <button type="button" class="btn btn-secondary" data-clear-filters>Ver todo el menú</button>
       </div>
     `;
-    contenedor.querySelector("#clear-menu-filters")?.addEventListener("click", () => {
-      categoriaSeleccionada = "todo";
-      busquedaMenu = "";
-      soloDisponibles = false;
-      ordenMenu = "featured";
-      const busqueda = document.querySelector("#menu-search");
-      const disponibles = document.querySelector("#available-only");
-      const orden = document.querySelector("#menu-sort");
-      if (busqueda) busqueda.value = "";
-      if (disponibles) disponibles.checked = false;
-      if (orden) orden.value = "featured";
-      const borrar = document.querySelector("#clear-menu-search");
-      if (borrar) borrar.hidden = true;
-      renderCategoriasMenu();
-      renderPizzasFiltradas();
-    });
+    contenedor
+      .querySelector("[data-clear-filters]")
+      ?.addEventListener("click", limpiarFiltrosMenu);
     return;
   }
 
@@ -684,6 +817,8 @@ function inicializarFiltrosMenu() {
   const categorias = document.querySelector("#menu-categories");
   const disponibles = document.querySelector("#available-only");
   const orden = document.querySelector("#menu-sort");
+  const limpiar = document.querySelector("#menu-clear-filters");
+  const filtro = document.querySelector(".catalog-filter");
 
   busqueda?.addEventListener("input", () => {
     busquedaMenu = busqueda.value.trim();
@@ -718,6 +853,19 @@ function inicializarFiltrosMenu() {
     ordenMenu = orden.value;
     renderPizzasFiltradas();
   });
+
+  limpiar?.addEventListener("click", limpiarFiltrosMenu);
+
+  document.addEventListener("click", (event) => {
+    if (!filtro?.open) return;
+    if (!filtro.contains(event.target)) filtro.open = false;
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && filtro?.open) filtro.open = false;
+  });
+
+  actualizarResumenFiltros();
 }
 
 async function obtenerPizzas() {
@@ -744,7 +892,16 @@ export async function cargarPizzasCliente() {
     pizzasCatalogo = await obtenerPizzas();
 
     if (pizzasCatalogo.length === 0) {
-      contenedor.innerHTML = `<div class="menu-empty"><p>No hay productos disponibles.</p></div>`;
+      contenedor.innerHTML = `
+        <div class="menu-empty" role="status">
+          <span class="menu-empty-icon" aria-hidden="true">🍕</span>
+          <h3>Estamos actualizando el menú</h3>
+          <p>Por ahora no hay productos publicados. Escríbenos por WhatsApp y con gusto te contamos qué hay disponible.</p>
+          <a class="btn btn-whatsapp" href="${escapeHtml(
+            whatsappUrl("Hola, quisiera consultar el menú disponible de El Callejón.")
+          )}" target="_blank" rel="noopener noreferrer">Consultar por WhatsApp</a>
+        </div>
+      `;
       return;
     }
 
@@ -756,9 +913,18 @@ export async function cargarPizzasCliente() {
     console.error(error);
     contenedor.innerHTML = `
       <div class="menu-error" role="alert">
-        <p>No pudimos conectar con el servidor.</p>
-        <p class="menu-error-hint">Arranca el backend: docker compose up -d</p>
-        <button type="button" class="btn btn-secondary" id="btn-reintentar-menu">Reintentar</button>
+        <span class="menu-error-icon" aria-hidden="true">📡</span>
+        <h3>No pudimos cargar el menú</h3>
+        <p class="menu-error-hint">
+          Revisa tu conexión e inténtalo de nuevo. Si el problema continúa,
+          escríbenos por WhatsApp y te ayudamos con tu pedido.
+        </p>
+        <div class="menu-error-actions">
+          <button type="button" class="btn btn-secondary" id="btn-reintentar-menu">Reintentar</button>
+          <a class="btn btn-whatsapp" href="${escapeHtml(
+            whatsappUrl("Hola, no pude cargar el menú en la página. ¿Me ayudan con mi pedido?")
+          )}" target="_blank" rel="noopener noreferrer">Escribir por WhatsApp</a>
+        </div>
       </div>
     `;
     contenedor.querySelector("#btn-reintentar-menu")?.addEventListener("click", () => {
