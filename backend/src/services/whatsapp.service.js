@@ -9,6 +9,13 @@ const {
 } = require("./whatsapp-bot");
 
 const bloqueosConversacion = new Map();
+const maximoMensajesHistorial = 12;
+
+const formatearPrecio = (precio) =>
+  `$${Number(precio).toLocaleString("es-CO")}`;
+
+const respuestaFallback =
+  "No estoy seguro de haber entendido bien, pero quiero ayudarte. 😊\n\nPuedo ayudarte con:\n• Ver el menú y precios\n• Armar tu pedido paso a paso\n• Métodos de pago, domicilio y salsa adicional\n\n¿Cuál de estos te gustaría revisar? También puedes escribir *menú*.";
 
 const ejecutarConversacionEnOrden = async (clave, operacion) => {
   const anterior = bloqueosConversacion.get(clave) || Promise.resolve();
@@ -39,7 +46,7 @@ const limpiarConversacionesExpiradas = async () => {
 
 const intervaloLimpiezaConversaciones = setInterval(() => {
   limpiarConversacionesExpiradas().catch((error) => {
-    console.error("No se pudieron eliminar borradores de WhatsApp expirados:", error);
+    console.error("No se pudieron eliminar conversaciones de WhatsApp expiradas:", error);
   });
 }, 60 * 60 * 1000);
 intervaloLimpiezaConversaciones.unref();
@@ -73,68 +80,164 @@ const obtenerTextoMensaje = (message) => {
   return "";
 };
 
-const generarRespuestaIA = async (mensaje, pizzas) => {
+const normalizarHistorial = (historial) =>
+  (Array.isArray(historial) ? historial : [])
+    .filter(
+      (item) =>
+        item &&
+        typeof item.text === "string" &&
+        item.text.trim().length > 0
+    )
+    .map((item) => ({
+      role: item.role === "assistant" ? "assistant" : "user",
+      text: item.text.trim(),
+    }))
+    .slice(-maximoMensajesHistorial);
+
+const construirContenidoGemini = (historial) => {
+  const contents = [];
+
+  for (const item of normalizarHistorial(historial)) {
+    const role = item.role === "assistant" ? "model" : "user";
+    const ultimo = contents[contents.length - 1];
+
+    if (ultimo?.role === role) {
+      ultimo.parts[0].text += `\n${item.text}`;
+    } else {
+      contents.push({ role, parts: [{ text: item.text }] });
+    }
+  }
+
+  return contents;
+};
+
+const prepararBorradorParaIA = (pedido, pizzas) => {
+  if (!pedido?.items?.length) return null;
+
+  const productos = pedido.items
+    .map((item) => {
+      const pizza = pizzas.find((opcion) => opcion.id === item.pizza_id);
+      if (!pizza) return null;
+      return {
+        producto: pizza.nombre,
+        cantidad: item.cantidad,
+        precio_unitario: formatearPrecio(pizza.precio),
+        subtotal: formatearPrecio(Number(pizza.precio) * item.cantidad),
+      };
+    })
+    .filter(Boolean);
+
+  const subtotal = pedido.items.reduce((total, item) => {
+    const pizza = pizzas.find((opcion) => opcion.id === item.pizza_id);
+    return total + (pizza ? Number(pizza.precio) * item.cantidad : 0);
+  }, 0);
+
+  return {
+    productos,
+    subtotal: formatearPrecio(subtotal),
+    metodo_pago: pedido.metodo_pago || null,
+    direccion: pedido.direccion || null,
+    solicitudes: Array.isArray(pedido.notas) ? pedido.notas : [],
+  };
+};
+
+const generarRespuestaIA = async (
+  mensaje,
+  pizzas,
+  historial = [],
+  pedido = null
+) => {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) return null;
 
-  const model = process.env.GEMINI_MODEL || "gemini-2.5-flash";
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(
-    model
-  )}:generateContent`;
-  const menu = prepararMenuParaIA(pizzas);
-  const response = await fetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-goog-api-key": apiKey,
-    },
-    body: JSON.stringify({
-      systemInstruction: {
-        parts: [
-          {
-            text: "Eres el asistente de WhatsApp de la pizzería El Callejón en Colombia. Responde en español, breve, amable y natural. Usa solo el menú JSON proporcionado. Se aceptan efectivo, transferencia y Nequi; el número de Nequi es 3124060135. La cobertura y tarifa del domicilio, y el precio o disponibilidad de salsa adicional, están pendientes de confirmación del equipo. Instagram: https://www.instagram.com/elcallejon_n4496/. Facebook: https://www.facebook.com/profile.php?id=61595493282153. Nunca inventes precios, ingredientes, horarios, domicilios ni disponibilidad. Si no conoces un dato, indica que el equipo lo confirmará. No afirmes que registraste o confirmaste un pedido o pago. Para productos no disponibles, ofrece solo alternativas marcadas como disponibles.",
-          },
-        ],
+  try {
+    const model = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(
+      model
+    )}:generateContent`;
+    const menu = prepararMenuParaIA(pizzas);
+    const borrador = prepararBorradorParaIA(pedido, pizzas);
+
+    const systemInstruction = `Eres el anfitrión digital de El Callejón, una pizzería colombiana que atiende pedidos por WhatsApp.
+
+TU OBJETIVO
+Que el cliente se sienta bien atendido, entienda el menú y logre pedir sin fricción. Ayuda también con dudas de pago, domicilio, salsa adicional, horario y contacto.
+
+ESTILO
+- Español colombiano neutro, cálido, cercano y profesional.
+- Tutea al cliente. Usa frases cortas y naturales.
+- Máximo 1 emoji por mensaje.
+- Respuestas de 2 a 5 frases cortas o 3 a 5 líneas. Si el cliente pide el menú, puedes usar una lista breve.
+- Termina con una pregunta breve o un siguiente paso útil cuando sea natural.
+- No repitas el menú completo en cada respuesta ni saludes de nuevo si la conversación ya está en curso.
+
+REGLAS DE DATOS
+- Usa únicamente el MENÚ ACTUAL y el BORRADOR ACTUAL que recibes.
+- Nunca inventes productos, precios, ingredientes, horarios, dirección, promociones, tiempos de entrega ni costos de domicilio.
+- Si falta un dato, di que el equipo lo confirma por el mismo chat.
+- No afirmes que registraste, confirmaste, cobraste ni despachaste un pedido. El sistema solo registra cuando el cliente escribe CONFIRMAR PEDIDO.
+- Si el cliente quiere agregar, quitar o cambiar productos, indícale que lo escriba de forma clara. No digas que ya lo hiciste.
+- Para productos agotados, ofrece solo alternativas marcadas como disponibles.
+- No prometas descuentos ni beneficios que no estén confirmados.
+- Si el cliente pregunta por una persona, dile que el equipo revisa el chat y le responde por aquí.`;
+
+    const contents = construirContenidoGemini(historial);
+    const mensajeActual = `MENÚ ACTUAL (JSON): ${JSON.stringify(
+      menu
+    )}\n\nBORRADOR ACTUAL (JSON): ${
+      borrador ? JSON.stringify(borrador) : "Sin borrador activo."
+    }\n\nMENSAJE DEL CLIENTE: ${mensaje}`;
+    const ultimo = contents[contents.length - 1];
+
+    if (ultimo?.role === "user") {
+      ultimo.parts[0].text += `\n\n${mensajeActual}`;
+    } else {
+      contents.push({ role: "user", parts: [{ text: mensajeActual }] });
+    }
+
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-goog-api-key": apiKey,
       },
-      contents: [
-        {
-          role: "user",
-          parts: [
-            {
-              text: `MENÚ ACTUAL (JSON): ${JSON.stringify(
-                menu
-              )}\n\nMENSAJE DEL CLIENTE: ${mensaje}`,
-            },
-          ],
+      body: JSON.stringify({
+        systemInstruction: {
+          parts: [{ text: systemInstruction }],
         },
-      ],
-      generationConfig: {
-        temperature: 0.3,
-        maxOutputTokens: 220,
-      },
-    }),
-    signal: AbortSignal.timeout(10000),
-  });
+        contents,
+        generationConfig: {
+          temperature: 0.65,
+          topP: 0.9,
+          maxOutputTokens: 480,
+        },
+      }),
+      signal: AbortSignal.timeout(12000),
+    });
 
-  const result = await response.json();
-  if (!response.ok) {
-    const detail = result.error?.message || `HTTP ${response.status}`;
-    throw new Error(`Gemini no pudo responder: ${detail}`);
+    const result = await response.json();
+    if (!response.ok) {
+      const detail = result.error?.message || `HTTP ${response.status}`;
+      throw new Error(`Gemini no pudo responder: ${detail}`);
+    }
+
+    const answer = result.candidates?.[0]?.content?.parts
+      ?.map((part) => part.text || "")
+      .join("")
+      .trim();
+
+    if (!answer) {
+      throw new Error("Gemini devolvió una respuesta vacía");
+    }
+
+    return answer;
+  } catch (error) {
+    console.error("No se pudo generar la respuesta con Gemini:", error);
+    return null;
   }
-
-  const answer = result.candidates?.[0]?.content?.parts
-    ?.map((part) => part.text || "")
-    .join("")
-    .trim();
-
-  if (!answer) {
-    throw new Error("Gemini devolvió una respuesta vacía");
-  }
-
-  return answer;
 };
 
-const obtenerPedidoWhatsapp = async (telefono) => {
+const obtenerConversacionWhatsapp = async (telefono) => {
   await pool.query(
     `DELETE FROM whatsapp_conversaciones
      WHERE telefono = $1
@@ -142,30 +245,34 @@ const obtenerPedidoWhatsapp = async (telefono) => {
     [telefono]
   );
   const result = await pool.query(
-    `SELECT pedido
+    `SELECT pedido, historial
      FROM whatsapp_conversaciones
      WHERE telefono = $1
        AND updated_at > CURRENT_TIMESTAMP - INTERVAL '24 hours'`,
     [telefono]
   );
+  const fila = result.rows[0];
 
-  return result.rows[0]?.pedido || null;
+  return {
+    pedido: fila?.pedido || null,
+    historial: normalizarHistorial(fila?.historial),
+  };
 };
 
-const guardarPedidoWhatsapp = async (telefono, pedido) => {
+const guardarConversacionWhatsapp = async (telefono, pedido, historial = []) => {
   await pool.query(
-    `INSERT INTO whatsapp_conversaciones (telefono, pedido, updated_at)
-     VALUES ($1, $2::jsonb, CURRENT_TIMESTAMP)
+    `INSERT INTO whatsapp_conversaciones (telefono, pedido, historial, updated_at)
+     VALUES ($1, $2::jsonb, $3::jsonb, CURRENT_TIMESTAMP)
      ON CONFLICT (telefono) DO UPDATE
-       SET pedido = EXCLUDED.pedido, updated_at = CURRENT_TIMESTAMP`,
-    [telefono, JSON.stringify(pedido)]
+       SET pedido = EXCLUDED.pedido,
+           historial = EXCLUDED.historial,
+           updated_at = CURRENT_TIMESTAMP`,
+    [
+      telefono,
+      pedido ? JSON.stringify(pedido) : null,
+      JSON.stringify(normalizarHistorial(historial)),
+    ]
   );
-};
-
-const eliminarPedidoWhatsapp = async (telefono) => {
-  await pool.query("DELETE FROM whatsapp_conversaciones WHERE telefono = $1", [
-    telefono,
-  ]);
 };
 
 const crearRespuestaPedidoGuardado = (pedidoCreado) => {
@@ -183,30 +290,39 @@ const crearRespuestaPedidoGuardado = (pedidoCreado) => {
       }.`
     : "";
   const solicitudes = pedidoCreado.notas
-    ? `\nSolicitudes: ${pedidoCreado.notas}.`
+    ? `\n📝 *Solicitudes:* ${pedidoCreado.notas}.`
     : "";
 
   return `✅ *¡Pedido #${pedidoCreado.id} registrado!*\nQuedó *pendiente de pago*.\n\n🧾 *Resumen:*\n${detalle}\n\n💵 *Subtotal:* $${Number(
     pedidoCreado.total
   ).toLocaleString(
     "es-CO"
-  )}${metodo}${solicitudes}\n\n🚚 El costo del domicilio y de cualquier salsa adicional está pendiente de confirmación; por eso el total final puede cambiar. El equipo te confirmará el total final.\n\n📲 *Más información:*\nInstagram: https://www.instagram.com/elcallejon_n4496/\nFacebook: https://www.facebook.com/profile.php?id=61595493282153`;
+  )}${metodo}${solicitudes}\n\n🚚 El costo del domicilio y de cualquier salsa adicional está pendiente de confirmación; por eso el total final puede cambiar. El equipo te confirmará el total final y coordinará contigo el pago y la entrega por este mismo chat.\n\n📲 *Más información:*\nInstagram: https://www.instagram.com/elcallejon_n4496/\nFacebook: https://www.facebook.com/profile.php?id=61595493282153`;
 };
 
 const responderMensaje = async (mensaje, destinatario) => {
   return ejecutarConversacionEnOrden(destinatario, async () => {
     const pizzas = await pizzaModel.obtenerTodas();
-    const pedidoGuardado = await obtenerPedidoWhatsapp(destinatario);
+    const conversacionPrevia = await obtenerConversacionWhatsapp(destinatario);
+    const pedidoGuardado = conversacionPrevia.pedido;
+    const historialPrevio = conversacionPrevia.historial;
     const conversacion = procesarConversacion(mensaje, pizzas, pedidoGuardado);
+    const historialConMensaje = [
+      ...historialPrevio,
+      { role: "user", text: mensaje },
+    ].slice(-maximoMensajesHistorial);
+
+    const guardarRespuesta = async (respuesta, pedido = null) => {
+      const historial = [
+        ...historialConMensaje,
+        { role: "assistant", text: respuesta },
+      ].slice(-maximoMensajesHistorial);
+      await guardarConversacionWhatsapp(destinatario, pedido, historial);
+      return respuesta;
+    };
 
     if (conversacion.accion === "cancelar") {
-      await eliminarPedidoWhatsapp(destinatario);
-      return conversacion.respuesta;
-    }
-
-    if (conversacion.accion === "guardar") {
-      await guardarPedidoWhatsapp(destinatario, conversacion.pedido);
-      return conversacion.respuesta;
+      return guardarRespuesta(conversacion.respuesta, null);
     }
 
     if (conversacion.accion === "confirmar") {
@@ -219,21 +335,47 @@ const responderMensaje = async (mensaje, destinatario) => {
         });
       } catch (error) {
         console.error("Error al registrar pedido recibido por WhatsApp:", error);
-        await guardarPedidoWhatsapp(destinatario, conversacion.pedido);
+        await guardarConversacionWhatsapp(
+          destinatario,
+          conversacion.pedido,
+          historialConMensaje
+        );
         return `No pude registrar el pedido todavía: ${error.message}. Conservé el borrador; revisemos la disponibilidad y vuelve a escribir “confirmar pedido”.`;
       }
-      await eliminarPedidoWhatsapp(destinatario);
-      return crearRespuestaPedidoGuardado(pedidoCreado);
+
+      const respuesta = crearRespuestaPedidoGuardado(pedidoCreado);
+      return guardarRespuesta(respuesta, null);
     }
 
-    const respuestaDeterminista =
-      conversacion.respuesta || respuestaAutomatica(mensaje, pizzas);
-    if (respuestaDeterminista) return respuestaDeterminista;
+    if (conversacion.accion === "guardar") {
+      if (conversacion.respuesta) {
+        return guardarRespuesta(conversacion.respuesta, conversacion.pedido);
+      }
 
-    const respuestaIA = await generarRespuestaIA(mensaje, pizzas);
-    if (respuestaIA) return respuestaIA;
+      const respuestaIA = await generarRespuestaIA(
+        mensaje,
+        pizzas,
+        historialPrevio,
+        conversacion.pedido
+      );
+      const respuesta =
+        respuestaIA || respuestaAutomatica(mensaje, pizzas) || respuestaFallback;
+      return guardarRespuesta(respuesta, conversacion.pedido);
+    }
 
-    return "Puedo ayudarte con el menú, pedidos, pagos, domicilio y salsa adicional. Escribe “menú” para ver las opciones.";
+    const respuestaIA = await generarRespuestaIA(
+      mensaje,
+      pizzas,
+      historialPrevio,
+      pedidoGuardado
+    );
+    const respuesta =
+      conversacion.respuesta ||
+      respuestaAutomatica(mensaje, pizzas) ||
+      respuestaIA ||
+      respuestaFallback;
+
+    return guardarRespuesta(respuesta, null);
   });
 };
 
@@ -319,7 +461,7 @@ const procesarMensaje = async (message) => {
     const texto = obtenerTextoMensaje(message);
     const respuesta = texto
       ? await responderMensaje(texto, destinatario)
-      : "Por ahora puedo leer mensajes de texto. Escribe “menú” para consultar pizzas y disponibilidad.";
+      : "Por ahora puedo leer mensajes de texto 😊. Escríbeme *menú* para ver las opciones disponibles o cuéntame qué se te antoja.";
 
     await enviarMensaje(destinatario, respuesta);
     await actualizarEstadoMensaje(messageId, "processed");

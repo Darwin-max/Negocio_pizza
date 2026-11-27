@@ -177,14 +177,15 @@ test("prepara para Gemini datos de disponibilidad sin revelar cantidades de stoc
   assert.equal(menu[3].disponible, false);
 });
 
-test("reconoce un saludo y ofrece el menú disponible", () => {
+test("reconoce un saludo y ofrece opciones disponibles sin volcar el menú", () => {
   const reply = respuestaAutomatica("¡Hola!", pizzas);
 
   assert.match(reply, /Soy el asistente de El Callejón/);
   assert.match(reply, /Margarita/);
-  assert.match(reply, /instagram\.com\/elcallejon_n4496/);
-  assert.match(reply, /facebook\.com\/profile\.php\?id=61595493282153/);
+  assert.match(reply, /Pepperoni/);
+  assert.match(reply, /menú/);
   assert.doesNotMatch(reply, /Hawaiana/);
+  assert.doesNotMatch(reply, /Especial/);
 });
 
 test("responde métodos de pago, domicilio, salsa y redes sin inventar valores", () => {
@@ -293,4 +294,133 @@ test("una pregunta sobre ingredientes no agrega automáticamente la pizza", () =
   assert.equal(respuesta.accion, "ninguna");
   assert.equal(respuesta.pedido, null);
   assert.match(respuesta.respuesta, /Tomate y mozzarella/);
+});
+
+test("recomienda opciones disponibles y evita agotados o inactivos", () => {
+  const reply = respuestaAutomatica("¿Qué me recomiendas?", pizzas);
+
+  assert.match(reply, /Te ayudo a elegir/);
+  assert.match(reply, /Margarita/);
+  assert.match(reply, /Pepperoni/);
+  assert.match(reply, /BBQ Pollo/);
+  assert.doesNotMatch(reply, /Hawaiana/);
+  assert.doesNotMatch(reply, /Especial/);
+});
+
+test("responde con naturalidad a agradecimientos, despedidas e identidad", () => {
+  assert.match(respuestaAutomatica("Muchas gracias", pizzas), /Con gusto/);
+  assert.match(
+    respuestaAutomatica("Hasta luego", pizzas),
+    /Gracias por escribirnos/
+  );
+  assert.match(
+    respuestaAutomatica("¿Eres un bot?", pizzas),
+    /asistente virtual/
+  );
+  assert.match(
+    respuestaAutomatica("Quiero hablar con un asesor", pizzas),
+    /el equipo te responde/
+  );
+});
+
+test("permite quitar productos del borrador y lo descarta si queda vacío", () => {
+  const borrador = procesarConversacion(
+    "2 Margarita y una Pepperoni",
+    pizzas
+  );
+  const parcial = procesarConversacion(
+    "quita una Margarita",
+    pizzas,
+    borrador.pedido
+  );
+
+  assert.equal(parcial.accion, "guardar");
+  assert.deepEqual(parcial.pedido.items, [
+    { pizza_id: 1, cantidad: 1 },
+    { pizza_id: 3, cantidad: 1 },
+  ]);
+
+  const vacio = procesarConversacion(
+    "quita una Margarita y quita una Pepperoni",
+    pizzas,
+    parcial.pedido
+  );
+
+  assert.equal(vacio.accion, "cancelar");
+  assert.match(vacio.respuesta, /pedido quedó vacío/);
+});
+
+test("muestra el resumen del borrador cuando el cliente lo pide", () => {
+  const borrador = procesarConversacion("2 Margarita", pizzas);
+  const resumen = procesarConversacion("resumen", pizzas, borrador.pedido);
+
+  assert.equal(resumen.accion, "guardar");
+  assert.match(resumen.respuesta, /Tu pedido hasta ahora/);
+  assert.match(resumen.respuesta, /2 × 🍕 \*Margarita\*/);
+  assert.match(resumen.respuesta, /\$56\.000/);
+  assert.match(resumen.respuesta, /CONFIRMAR PEDIDO/);
+});
+
+test("responde preguntas frecuentes sin inventar horarios, promociones ni dirección", () => {
+  assert.match(
+    respuestaAutomatica("¿A qué hora abren?", pizzas),
+    /No tengo el horario confirmado/
+  );
+  assert.match(
+    respuestaAutomatica("¿Cuánto demora mi pedido?", pizzas),
+    /confirma el equipo/
+  );
+  assert.match(
+    respuestaAutomatica("¿Tienen promociones?", pizzas),
+    /No tengo promociones confirmadas/
+  );
+  assert.match(
+    respuestaAutomatica("¿Dónde queda el local?", pizzas),
+    /No tengo la dirección del local confirmada/
+  );
+});
+
+test("no convierte preguntas frecuentes en solicitudes del pedido", () => {
+  const domicilio = procesarConversacion("¿Cuánto cuesta el domicilio?", pizzas);
+  assert.equal(domicilio.accion, "ninguna");
+  assert.equal(domicilio.pedido, null);
+
+  const salsa = procesarConversacion("¿Puedo pedir más salsa?", pizzas);
+  assert.equal(salsa.accion, "ninguna");
+  assert.equal(salsa.pedido, null);
+
+  const pago = procesarConversacion("¿Aceptan Nequi?", pizzas);
+  assert.equal(pago.accion, "ninguna");
+  assert.equal(pago.pedido, null);
+});
+
+test("conserva el método de pago indicado antes de elegir productos", () => {
+  const pago = procesarConversacion("Nequi", pizzas);
+
+  assert.equal(pago.accion, "guardar");
+  assert.equal(pago.pedido.metodo_pago, "Nequi");
+
+  const pedido = procesarConversacion("una Margarita", pizzas, pago.pedido);
+  assert.equal(pedido.accion, "guardar");
+  assert.equal(pedido.pedido.metodo_pago, "Nequi");
+  assert.match(pedido.respuesta, /Nequi \(312 406 0135\)/);
+});
+
+test("guarda la dirección aunque el cliente no mencione la palabra domicilio", () => {
+  const resultado = procesarConversacion(
+    "Mi dirección es calle 12 # 34-56",
+    pizzas
+  );
+
+  assert.equal(resultado.accion, "guardar");
+  assert.equal(resultado.pedido.direccion, "calle 12 # 34-56");
+  assert.match(resultado.respuesta, /domicilio en \*calle 12/);
+});
+
+test("registra una solicitud de salsa aunque todavía no haya productos", () => {
+  const resultado = procesarConversacion("Quiero salsa extra", pizzas);
+
+  assert.equal(resultado.accion, "guardar");
+  assert.match(resultado.pedido.notas.join(" "), /Salsa adicional/);
+  assert.match(resultado.respuesta, /disponibilidad y el precio están pendientes/i);
 });

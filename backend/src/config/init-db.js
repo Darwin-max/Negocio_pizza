@@ -126,9 +126,21 @@ async function initDb() {
     await client.query(`
       CREATE TABLE IF NOT EXISTS whatsapp_conversaciones (
         telefono TEXT PRIMARY KEY,
-        pedido JSONB NOT NULL,
+        pedido JSONB,
+        historial JSONB NOT NULL DEFAULT '[]'::jsonb,
         updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
       );
+    `);
+
+    // Compatibilidad con instalaciones que ya tenían la tabla sin historial.
+    await client.query(`
+      ALTER TABLE whatsapp_conversaciones
+      ADD COLUMN IF NOT EXISTS historial JSONB NOT NULL DEFAULT '[]'::jsonb;
+    `);
+
+    await client.query(`
+      ALTER TABLE whatsapp_conversaciones
+      ALTER COLUMN pedido DROP NOT NULL;
     `);
 
     await client.query(`
